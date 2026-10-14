@@ -55,6 +55,7 @@ public sealed partial class Battle
     }
     public string? IssueGroup(int faction,IEnumerable<int> ids,OrderKind kind,Position target,int? targetId=null,bool append=false,long? deliveryTick=null)
     {
+        if(Outcome is not null) return "Battle ended; F9 restarts the skirmish.";
         var selected=ids.Distinct().Order().Select(id=>formations.FirstOrDefault(f=>f.Id==id)).ToArray();
         if(selected.Length==0||selected.Any(f=>f is null||f.Faction!=faction||!f.Active)) return "Select living friendly formations.";
         var units=selected.Select(f=>f!).ToArray();

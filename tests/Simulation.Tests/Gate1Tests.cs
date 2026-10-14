@@ -238,6 +238,7 @@ public static class Gate1Tests
         {
             var b=Make([Unit(1,1,-3000,0,strength:100),Unit(2,2,3000,0,strength:1,facing:2700)],combat:true,morale:true,victory:true);b.Advance(T(100));
             Check(b.Outcome=="Blue victory"&&b.GetFormation(2).Strength==0,"victory absent");
+            Check(b.IssueGroup(1,[1],OrderKind.Move,new(0,0)) is not null,"accepted ineffective post-battle orders");
         });
     }
 }
