@@ -4,15 +4,10 @@ public static class Scenarios
 {
     public static ScenarioDefinition Skirmish()
     {
-        var specs=new List<FormationSpec>();
-        UnitKind[] kinds=[UnitKind.Infantry,UnitKind.Spearmen,UnitKind.Archers,UnitKind.Infantry,UnitKind.Archers,UnitKind.Cavalry];
-        for(int i=0;i<6;i++)
-        {
-            specs.Add(new(i+1,1,kinds[i],new(-42000,-35000+i*13000),24,900));
-            specs.Add(new(i+101,2,kinds[i],new(42000,-35000+i*13000),24,2700));
-        }
-        return new("Ridge skirmish",TerrainMap.Battlefield(),specs);
+        using var stream=typeof(Scenarios).Assembly.GetManifestResourceStream("FantasyWarfare.Skirmish.json")??throw new InvalidOperationException("Missing scenario data.");
+        using var reader=new StreamReader(stream);return ScenarioCodec.Parse(reader.ReadToEnd());
     }
+
     public static ScenarioDefinition Surprise()
     {
         var forest=new TerrainMap(p=>new(p.X>=18000&&p.X<=26000&&p.Z>=10000&&p.Z<=20000?TerrainKind.Forest:TerrainKind.Open,0));

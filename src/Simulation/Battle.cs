@@ -36,10 +36,10 @@ public sealed partial class Battle
     {
         if(scenario.Formations.Count==0 || scenario.Formations.Select(f=>f.Id).Distinct().Count()!=scenario.Formations.Count)
             throw new ArgumentException("Scenario needs unique, nonempty formation IDs.");
-        if(scenario.Formations.Any(f=>f.Id<=0||f.Faction<1||f.Faction>2||f.Strength<=0||f.Strength>500||f.Morale<0||f.Morale>1000||!Enum.IsDefined(f.Kind)))
+        if(scenario.Formations.Any(f=>f.Id<=0||f.Faction<1||f.Faction>2||f.Strength<=0||f.Strength>500||f.Morale<0||f.Morale>1000||f.Facing<0||f.Facing>=3600||!Enum.IsDefined(f.Kind)))
             throw new ArgumentException("Invalid formation definition.");
         Scenario=scenario;Seed=seed;this.legacy=legacy;random=new(seed);
-        formations=scenario.Formations.OrderBy(s=>s.Id).Select(s=>new Formation(s)).ToList();
+        formations=scenario.Formations.OrderBy(s=>s.Id).Select(s=>new Formation(s,scenario.Units?.GetValueOrDefault(s.Kind))).ToList();
         if(formations.Any(f=>!Map.CanOccupy(f.Position,legacy?0:f.Definition.Radius))) throw new ArgumentException("Deployment intersects obstacle/map boundary.");
         perceptions[1]=new(1);perceptions[2]=new(2);UpdatePerceptions();
     }
@@ -136,7 +136,7 @@ public sealed partial class Battle
             var target=perceptions[f.Faction].Visible.FirstOrDefault(e=>e.Id==f.CurrentOrder.TargetId);
             if(target is not null)
             {
-                int range=f.Kind==UnitKind.Archers?f.Definition.Range-2000:f.Definition.Radius+target.Radius+1000;
+                int range=f.Kind==UnitKind.Archers&&f.Ammunition>0?f.Definition.Range-2000:f.Definition.Radius+target.Radius+1000;
                 if(Position.Distance(f.Position,target.Position)<=range && Map.HasLineOfSight(f.Position,target.Position)) { f.Route.Clear();f.Destination=null;f.Facing=FacingTo(f.Position,target.Position);f.CommandStatus="Engaging";return; }
                 if(f.Destination is null || Tick%20==0&&Position.Distance(f.Destination.Value,target.Position)>2000)
                 { f.Route.Clear();f.QueuedDestinations.Clear();f.QueuedDestinations.Enqueue(target.Position);BeginNextDestination(f); }

@@ -11,11 +11,13 @@ public readonly record struct Position(int X, int Z)
         return length<=distance ? to : new(from.X+(int)Math.Round(dx*distance/length),from.Z+(int)Math.Round(dz*distance/length));
     }
 }
+public enum WeaponKind { Sword, Spear, Bow, Lance }
 public enum UnitKind { Infantry, Spearmen, Archers, Cavalry }
 public enum FormationStatus { Ready, Withdrawing, Routing, Rallying, Destroyed }
 public enum OrderKind { Move, Attack, Hold, Withdraw, Rally }
 public sealed record UnitDefinition(UnitKind Kind, int Speed, int Radius, int MeleePower, int Armor, int Range, int Ammo, int Discipline)
 {
+    public WeaponKind Weapon=>Kind switch { UnitKind.Spearmen=>WeaponKind.Spear,UnitKind.Archers=>WeaponKind.Bow,UnitKind.Cavalry=>WeaponKind.Lance,_=>WeaponKind.Sword };
     public static UnitDefinition For(UnitKind kind) => kind switch {
         UnitKind.Spearmen=>new(kind,3400,3000,65,40,0,0,80),
         UnitKind.Archers=>new(kind,3800,3000,25,15,28000,30,65),
@@ -25,7 +27,7 @@ public sealed record UnitDefinition(UnitKind Kind, int Speed, int Radius, int Me
 public readonly record struct MoveOrder(int SchemaVersion, long Id, long DeliveryTick, Position Target, bool Append);
 public sealed record FormationSpec(int Id, int Faction, UnitKind Kind, Position Position, int Strength=24, int Facing=900, int Morale=900);
 public sealed record ScenarioDefinition(string Name, TerrainMap Map, IReadOnlyList<FormationSpec> Formations,
-    bool Combat=true, bool Commander=true, bool Morale=true, bool Victory=true);
+    bool Combat=true, bool Commander=true, bool Morale=true, bool Victory=true, IReadOnlyDictionary<UnitKind,UnitDefinition>? Units=null);
 public sealed record TacticalOrder(int SchemaVersion, long Id, long DeliveryTick, int Faction, int FormationId,
     OrderKind Kind, Position Target, int? TargetId=null, bool Append=false, int GroupSpeed=0);
 public sealed class Formation
@@ -45,6 +47,7 @@ public sealed class Formation
     public FormationStatus Status { get; internal set; }
     public Position Position { get; internal set; }
     public Position? Destination { get; internal set; }
+    public IReadOnlyList<Position> PlannedRoute=>Route.ToArray();
     public TacticalOrder? CurrentOrder { get; internal set; }
     public string CommandStatus { get; internal set; } = "Holding";
     public bool Active => Strength>0 && Status!=FormationStatus.Destroyed;
@@ -54,9 +57,9 @@ public sealed class Formation
     internal long LastCombatTick=-10000, LastShotTick=-10000;
     internal bool MovedThisTick, EngagedThisTick;
     internal int GroupSpeed;
-    internal Formation(FormationSpec s)
+    internal Formation(FormationSpec s,UnitDefinition? definition=null)
     {
-        Id=s.Id; Faction=s.Faction; Definition=UnitDefinition.For(s.Kind); Position=s.Position;
+        Id=s.Id; Faction=s.Faction; Definition=definition??UnitDefinition.For(s.Kind); Position=s.Position;
         InitialStrength=Strength=s.Strength; Facing=s.Facing; Morale=s.Morale; Ammunition=Definition.Ammo;
     }
 }

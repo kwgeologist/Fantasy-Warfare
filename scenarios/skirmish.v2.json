@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 2,
+  "name": "Ridge skirmish",
+  "terrain": "ridge",
+  "formations": [
+    {
+      "id": 1,
+      "faction": 1,
+      "kind": "infantry",
+      "position": {
+        "x": -42000,
+        "z": -35000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 101,
+      "faction": 2,
+      "kind": "infantry",
+      "position": {
+        "x": 42000,
+        "z": -35000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    },
+    {
+      "id": 2,
+      "faction": 1,
+      "kind": "spearmen",
+      "position": {
+        "x": -42000,
+        "z": -22000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 102,
+      "faction": 2,
+      "kind": "spearmen",
+      "position": {
+        "x": 42000,
+        "z": -22000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    },
+    {
+      "id": 3,
+      "faction": 1,
+      "kind": "archers",
+      "position": {
+        "x": -42000,
+        "z": -9000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 103,
+      "faction": 2,
+      "kind": "archers",
+      "position": {
+        "x": 42000,
+        "z": -9000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    },
+    {
+      "id": 4,
+      "faction": 1,
+      "kind": "infantry",
+      "position": {
+        "x": -42000,
+        "z": 4000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 104,
+      "faction": 2,
+      "kind": "infantry",
+      "position": {
+        "x": 42000,
+        "z": 4000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    },
+    {
+      "id": 5,
+      "faction": 1,
+      "kind": "archers",
+      "position": {
+        "x": -42000,
+        "z": 17000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 105,
+      "faction": 2,
+      "kind": "archers",
+      "position": {
+        "x": 42000,
+        "z": 17000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    },
+    {
+      "id": 6,
+      "faction": 1,
+      "kind": "cavalry",
+      "position": {
+        "x": -42000,
+        "z": 30000
+      },
+      "strength": 24,
+      "facing": 900,
+      "morale": 900
+    },
+    {
+      "id": 106,
+      "faction": 2,
+      "kind": "cavalry",
+      "position": {
+        "x": 42000,
+        "z": 30000
+      },
+      "strength": 24,
+      "facing": 2700,
+      "morale": 900
+    }
+  ],
+  "units": [
+    {
+      "kind": "infantry",
+      "speed": 4000,
+      "radius": 3000,
+      "meleePower": 75,
+      "armor": 45,
+      "range": 0,
+      "ammo": 0,
+      "discipline": 80
+    },
+    {
+      "kind": "spearmen",
+      "speed": 3400,
+      "radius": 3000,
+      "meleePower": 65,
+      "armor": 40,
+      "range": 0,
+      "ammo": 0,
+      "discipline": 80
+    },
+    {
+      "kind": "archers",
+      "speed": 3800,
+      "radius": 3000,
+      "meleePower": 25,
+      "armor": 15,
+      "range": 28000,
+      "ammo": 30,
+      "discipline": 65
+    },
+    {
+      "kind": "cavalry",
+      "speed": 6500,
+      "radius": 3400,
+      "meleePower": 100,
+      "armor": 35,
+      "range": 0,
+      "ammo": 0,
+      "discipline": 70
+    }
+  ]
+}

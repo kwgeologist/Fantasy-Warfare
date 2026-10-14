@@ -200,6 +200,40 @@ public static class Gate1Tests
             var other=Run(Enumerable.Repeat(50,400).ToArray(),43);Check(a.RandomState!=other.RandomState,"seed unused");
             Console.WriteLine($"SCENARIO battle: casualties={a.Formations.Sum(f=>f.Casualties)}, AI decisions={a.Decisions.Count}, RNG={a.RandomState}");
         });
+        Test("forest contact reveals opponents and permits melee, not distant arrows",()=>
+        {
+            var b=Make([Unit(1,1,-3000,0),Unit(2,2,3000,0,facing:2700)],new(p=>new(TerrainKind.Forest,0)),combat:true);
+            Check(b.Perception(1).IsVisible(2)&&b.Perception(2).IsVisible(1),"contact concealed");b.Advance(T(40));Check(b.Formation.Casualties>0&&b.GetFormation(2).Casualties>0,"forest melee blocked");
+        });
+        Test("flanking causes morale and cohesion pressure without casualties",()=>
+        {
+            var b=Make([Unit(1,1,0,0),Unit(2,2,-10000,0)],morale:true);b.Advance(T(20));
+            Check(b.Formation.Casualties==0&&b.Formation.Morale<900&&b.Formation.Cohesion<1000,"flank pressure absent");
+        });
+        Test("default playable skirmish actually reaches combat with opposing commander",()=>
+        {
+            var b=new Battle(Scenarios.Skirmish(),42);b.Advance(T(3200));
+            Check(b.Events.Any(e=>e.Kind=="Casualty")&&b.Decisions.Count>0,"default scenario never fought");
+            Console.WriteLine($"SCENARIO default: tick={b.Tick}, casualties={b.Formations.Sum(f=>f.Casualties)}, plans={b.Decisions.Count}, outcome={b.Outcome??"ongoing"}");
+        });
+        Test("versioned scenario data drives the runtime roster and weapons",()=>
+        {
+            var scenario=Scenarios.Skirmish();var b=new Battle(scenario);
+            Check(scenario.Units?.Count==4&&b.Formations.Count==12,"data not applied");
+            Check(b.GetFormation(2).Definition.Weapon==WeaponKind.Spear&&b.GetFormation(3).Definition.Weapon==WeaponKind.Bow,"weapons");
+        });
+        Test("malformed or unsupported scenario data is rejected",()=>
+        {
+            bool rejected=false;try{ScenarioCodec.Parse("{\"schemaVersion\":3,\"name\":\"bad\",\"terrain\":\"flat\",\"formations\":[],\"units\":[]}");}catch(FormatException){rejected=true;}
+            Check(rejected,"unsupported schema accepted");
+        });
+        Test("archer commander respects its own exhausted ammunition",()=>
+        {
+            var scenario=new ScenarioDefinition("Empty arrows",new TerrainMap(),[Unit(101,2,0,0,UnitKind.Archers),Unit(1,1,18000,0)],false,false,false,false,
+                new Dictionary<UnitKind,UnitDefinition>{{UnitKind.Archers,UnitDefinition.For(UnitKind.Archers) with {Ammo=0}}});
+            var b=new Battle(scenario);var plan=new TacticalCommander().Plan(b.Knowledge(2),b.Map);
+            Check(plan.Any(p=>p.Plan=="OutOfArrows"&&p.Commands[0].Kind!=OrderKind.Attack),"imaginary ammunition");
+        });
         Test("victory follows actual defeat or army-wide routing",()=>
         {
             var b=Make([Unit(1,1,-3000,0,strength:100),Unit(2,2,3000,0,strength:1,facing:2700)],combat:true,morale:true,victory:true);b.Advance(T(100));

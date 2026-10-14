@@ -34,8 +34,9 @@ public sealed partial class Battle
             p.BeginTick(Tick);
             foreach(var enemy in formations.Where(f=>f.Faction!=p.Faction&&f.Active))
                 if(formations.Where(f=>f.Faction==p.Faction&&f.Active).Any(observer=>
-                    Position.Distance(observer.Position,enemy.Position)<=(Map.Cell(enemy.Position).Kind==TerrainKind.Forest&&Tick-enemy.LastShotTick>40?10000:36000)
-                    &&Map.HasLineOfSight(observer.Position,enemy.Position))) p.Observe(enemy,Tick);
+                    (Position.Distance(observer.Position,enemy.Position)<=observer.Definition.Radius+enemy.Definition.Radius+1200&&Map.SegmentClear(observer.Position,enemy.Position,0)) ||
+                    (Position.Distance(observer.Position,enemy.Position)<=(Map.Cell(enemy.Position).Kind==TerrainKind.Forest&&Tick-enemy.LastShotTick>40?10000:36000)
+                    &&Map.HasLineOfSight(observer.Position,enemy.Position)))) p.Observe(enemy,Tick);
         }
     }
     public ArmyKnowledge Knowledge(int faction)=>new(faction,Tick,

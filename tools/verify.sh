@@ -7,3 +7,4 @@ dotnet build game/FantasyWarfare.csproj --no-restore
 dotnet run --project tests/Simulation.Tests --no-restore
 "${GODOT:-godot}" --headless --editor --path game --import
 "${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --smoke
+"${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --gate1-smoke

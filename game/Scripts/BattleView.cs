@@ -1,187 +1,307 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using FantasyWarfare.Simulation;
 
 public partial class BattleView : Node3D
 {
-    private readonly Battle battle = new(42);
+    private Battle battle = null!;
+    private readonly FormationSelection selected = new();
+    private readonly Dictionary<int,FormationVisual> visuals = new();
     private Camera3D camera = null!;
-    private Node3D formation = null!;
-    private MeshInstance3D selection = null!, targetMarker = null!;
-    private Label status = null!;
-    private bool selected;
-    private int mode;
-    private float yaw = 0.65f, pitch = 0.85f, distance = 72;
-    private Vector3 focus = Vector3.Zero;
-    private bool smoke;
+    private Label status = null!, summary = null!;
+    private PanelContainer helpPanel = null!, statusPanel = null!;
+    private SelectionOverlay selectionOverlay = null!;
+    private int mode, eventCursor;
+    private float yaw=0.65f, pitch=0.85f, distance=90, speed=1;
+    private Vector3 focus=Vector3.Zero;
+    private bool legacySmoke, tacticalSmoke, drag, withdrawMode;
+    private Vector2 dragStart, dragEnd;
+    private string message="Select a friendly formation, or Tab for all.";
     private int smokeStage, smokeFrames;
-    private Position pausePosition;
     private long pauseTick;
+    private Position[] pausedPositions=Array.Empty<Position>();
     private double elapsedRemainder;
+    private sealed class FormationVisual
+    {
+        public Node3D Root=null!;
+        public MeshInstance3D Disk=null!, Intent=null!, RouteLine=null!;
+        public StaticBody3D Body=null!;
+        public Label3D Label=null!;
+        public List<MeshInstance3D> Troops=new();
+    }
     public override void _Ready()
     {
-        smoke = OS.GetCmdlineUserArgs().Contains("--smoke");
-        var world = new WorldEnvironment { Environment = new Godot.Environment {
-            BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("819aad"),
-            AmbientLightSource = Godot.Environment.AmbientSource.Color,
-            AmbientLightColor = Colors.White, AmbientLightEnergy = 0.65f } };
-        AddChild(world);
-        AddChild(new DirectionalLight3D { RotationDegrees = new(-55,-30,0), LightEnergy=1.1f, ShadowEnabled=true });
-        BuildTerrain();
-        for(int i=0;i<32;i++)
+        legacySmoke=OS.GetCmdlineUserArgs().Contains("--smoke");
+        tacticalSmoke=OS.GetCmdlineUserArgs().Contains("--gate1-smoke");
+        battle=legacySmoke?new Battle(42):new Battle(Scenarios.Skirmish(),42);
+        if(legacySmoke||tacticalSmoke)
         {
-            float x=-34+(i%8)*2.3f, z=-28+(i/8)*3.8f;
-            float y=Terrain.Height(x,z);
-            AddMesh(this,new CylinderMesh { TopRadius=0.22f, BottomRadius=0.3f, Height=3 },new(x,y+1.5f,z),new Color("705438"));
-            AddMesh(this,new CylinderMesh { TopRadius=0, BottomRadius=1.35f, Height=4 },new(x,y+4,z),new Color("254c32"));
+            GetWindow().Size=new Vector2I(1280,720);
+            GetWindow().ContentScaleSize=new Vector2I(1280,720);
+            GetWindow().ContentScaleMode=Window.ContentScaleModeEnum.CanvasItems;
         }
-        AddTerrainLabel("PLAIN",new(-27,0.2f,17));
-        AddTerrainLabel("RIDGE",new(12,Terrain.Height(12,0)+0.4f,0));
-        AddTerrainLabel("WOODS",new(-26,7,-22));
-        AddTerrainLabel("VALLEY",new(-10,Terrain.Height(-10,22)+0.5f,22));
-        formation = new Node3D(); AddChild(formation);
-        for(int i=0;i<battle.Formation.Strength;i++) AddMesh(formation,new BoxMesh { Size=new(0.65f,1.4f,0.65f) },new((i%6-2.5f)*0.95f,0.7f,(i/6-1.5f)*0.95f),new Color("477fe0"));
-        selection=AddMesh(formation,new CylinderMesh { TopRadius=3.9f,BottomRadius=3.9f,Height=0.08f },new(0,0.05f,0),new Color(0.95f,0.8f,0.2f,0.5f));
-        selection.Visible=false;
-        var body=new StaticBody3D { CollisionLayer=2,CollisionMask=0 }; formation.AddChild(body);
-        body.AddChild(new CollisionShape3D { Shape=new BoxShape3D { Size=new(6.5f,2,4.5f) },Position=new(0,1,0) });
-        targetMarker=AddMesh(this,new CylinderMesh { TopRadius=0.7f,BottomRadius=0.7f,Height=0.15f },Vector3.Zero,Colors.Orange);
-        targetMarker.Visible=false;
-        camera=new Camera3D { Far=400,Current=true }; AddChild(camera); UpdateCamera();
-        var ui=new CanvasLayer(); AddChild(ui);
-        var panel=new PanelContainer { Position=new(12,12) }; ui.AddChild(panel);
-        var box=new VBoxContainer(); panel.AddChild(box);
-        box.AddChild(new Label { Text=@"FANTASY WARFARE | Gate 0
-Left click: select / deselect formation   Right click: move
-Shift + right click: append waypoint   Space: pause / resume
-1: RTS   2: Free orbit   3: Overhead
-WASD: pan   Wheel: zoom   Middle drag: orbit (Free)" });
-        status=new Label(); box.AddChild(status);
+        AddChild(new WorldEnvironment { Environment=new Godot.Environment {
+            BackgroundMode=Godot.Environment.BGMode.Color,BackgroundColor=new Color("819aad"),
+            AmbientLightSource=Godot.Environment.AmbientSource.Color,AmbientLightColor=Colors.White,AmbientLightEnergy=0.45f } });
+        AddChild(new DirectionalLight3D { RotationDegrees=new(-55,-30,0),LightEnergy=0.8f,ShadowEnabled=true });
+        BuildTerrain();
+        foreach(var f in battle.Formations) BuildFormation(f);
+        camera=new Camera3D { Far=400,Current=true };AddChild(camera);UpdateCamera();
+        var ui=new CanvasLayer();AddChild(ui);
+        helpPanel=new PanelContainer { Position=new(10,10) };ui.AddChild(helpPanel);
+        helpPanel.AddChild(new Label { Text="FANTASY WARFARE | Gate 1\nClick: select | Shift-click/drag: multi-select | Tab: all\nRight-click terrain: group move | Enemy: attack | Shift: queue\nSpace: pause | H: hold | X then right-click: withdraw | R: rally\n1 RTS / 2 Free / 3 Overhead | WASD pan | Wheel zoom | Middle orbit\n- / =: speed | F1: hide/show HUD | F9: restart" });
+        statusPanel=new PanelContainer();ui.AddChild(statusPanel);
+        var box=new VBoxContainer();statusPanel.AddChild(box);
+        summary=new Label();status=new Label();summary.AddThemeFontSizeOverride("font_size",14);status.AddThemeFontSizeOverride("font_size",13);
+        box.AddChild(summary);box.AddChild(status);
+        selectionOverlay=new SelectionOverlay { MouseFilter=Control.MouseFilterEnum.Ignore };ui.AddChild(selectionOverlay);
         SyncPresentation();
-        GD.Print("Gate 0 scene ready: plain, ridge, woods, valley; 24 visual troops; three camera modes.");
+        GD.Print($"Gate 1 scene ready: {battle.OwnFormations(1).Count()} friendly formations; shared simulation, terrain and faction visibility.");
     }
+    private float Height(float x,float z)=>battle.Map.Height(new((int)MathF.Round(x*1000),(int)MathF.Round(z*1000)))/1000f;
+    private Vector3 World(Position p,float lift=0)=>new(p.X/1000f,Height(p.X/1000f,p.Z/1000f)+lift,p.Z/1000f);
     private MeshInstance3D AddMesh(Node parent,Mesh mesh,Vector3 position,Color color)
     {
         var material=new StandardMaterial3D { AlbedoColor=color };
         if(color.A<1) material.Transparency=BaseMaterial3D.TransparencyEnum.Alpha;
-        var node=new MeshInstance3D { Mesh=mesh,Position=position,MaterialOverride=material }; parent.AddChild(node); return node;
+        var node=new MeshInstance3D { Mesh=mesh,Position=position,MaterialOverride=material };parent.AddChild(node);return node;
     }
-    private void AddTerrainLabel(string text,Vector3 position) => AddChild(new Label3D { Text=text, Position=position,FontSize=64,PixelSize=0.035f,Billboard=BaseMaterial3D.BillboardModeEnum.Enabled,NoDepthTest=false });
     private void BuildTerrain()
     {
-        var surface=new SurfaceTool(); surface.Begin(Mesh.PrimitiveType.Triangles);
-        Vector3 Point(int x,int z)=>new(x,Terrain.Height(x,z),z);
-        void Vertex(Vector3 p) { surface.SetColor(p.Y>2?new Color("8b8760"):p.Y<-1?new Color("4d704e"):new Color("77935e")); surface.AddVertex(p); }
-        for(int x=-50;x<50;x+=2) for(int z=-50;z<50;z+=2)
+        var surface=new SurfaceTool();surface.Begin(Mesh.PrimitiveType.Triangles);
+        void Vertex(int x,int z)
         {
-            Vertex(Point(x,z)); Vertex(Point(x+2,z)); Vertex(Point(x,z+2));
-            Vertex(Point(x+2,z)); Vertex(Point(x+2,z+2)); Vertex(Point(x,z+2));
+            var cell=battle.Map.Cell(new(x*1000,z*1000));
+            var color=cell.Kind switch { TerrainKind.Forest=>new Color("477348"),TerrainKind.Road=>new Color("b8a073"),TerrainKind.Rock=>new Color("696974"),_=>cell.Height>2000?new Color("8b8760"):cell.Height<-1000?new Color("56764d"):new Color("77935e") };
+            surface.SetColor(color);surface.AddVertex(new(x,Height(x,z),z));
         }
-        surface.GenerateNormals();
-        var mesh=surface.Commit();
-        var material=new StandardMaterial3D { VertexColorUseAsAlbedo=true };
-        var node=new MeshInstance3D { Mesh=mesh,MaterialOverride=material }; AddChild(node); node.CreateTrimeshCollision();
+        for(int x=-50;x<50;x+=2)for(int z=-50;z<50;z+=2)
+        { Vertex(x,z);Vertex(x+2,z);Vertex(x,z+2);Vertex(x+2,z);Vertex(x+2,z+2);Vertex(x,z+2); }
+        surface.GenerateNormals();var node=new MeshInstance3D { Mesh=surface.Commit(),MaterialOverride=new StandardMaterial3D { VertexColorUseAsAlbedo=true } };AddChild(node);node.CreateTrimeshCollision();
+        for(int x=0;x<50;x++)for(int z=0;z<50;z++)
+        {
+            var p=TerrainMap.Center(x,z);var cell=battle.Map.Cell(p);
+            if(cell.Kind==TerrainKind.Forest && x%2==0 && z%2==0)
+            {
+                AddMesh(this,new CylinderMesh { TopRadius=0.2f,BottomRadius=0.3f,Height=2 },World(p,1),new Color("705438"));
+                AddMesh(this,new CylinderMesh { TopRadius=0,BottomRadius=1.2f,Height=3 },World(p,3),new Color("254c32"));
+            }
+            if(cell.Kind==TerrainKind.Rock) AddMesh(this,new BoxMesh { Size=new(2,2.5f,2) },World(p,1.25f),new Color("666671"));
+        }
+        foreach(var (text,p) in new[]{("PLAIN",new Position(-29000,15000)),("RIDGE",new Position(12000,0)),("WOODS",new Position(-26000,-22000)),("VALLEY",new Position(-10000,26000)),("ROAD",new Position(0,-6000)),("ROCK: IMPASSABLE",new Position(2000,21000))})
+            AddChild(new Label3D { Text=text,Position=World(p,2),FontSize=48,PixelSize=0.035f,Billboard=BaseMaterial3D.BillboardModeEnum.Enabled });
+    }
+    private void BuildFormation(Formation f)
+    {
+        var v=new FormationVisual { Root=new Node3D() };AddChild(v.Root);
+        var color=f.Faction==1?new Color("477fe0"):new Color("ca5145");
+        for(int i=0;i<Math.Min(24,f.InitialStrength);i++)
+        {
+            Mesh mesh=f.Kind switch { UnitKind.Cavalry=>new BoxMesh { Size=new(0.7f,1.3f,1.1f) },UnitKind.Archers=>new CylinderMesh { TopRadius=0.3f,BottomRadius=0.3f,Height=1.3f },UnitKind.Spearmen=>new BoxMesh { Size=new(0.35f,1.8f,0.35f) },_=>new BoxMesh { Size=new(0.65f,1.4f,0.65f) } };
+            v.Troops.Add(AddMesh(v.Root,mesh,new((i%6-2.5f)*0.8f,0.7f,(i/6-1.5f)*0.8f),color));
+        }
+        AddMesh(v.Root,new BoxMesh { Size=new(0.25f,0.15f,1.8f) },new(0,0.25f,-3),Colors.White);
+        v.Disk=AddMesh(v.Root,new CylinderMesh { TopRadius=3.3f,BottomRadius=3.3f,Height=0.08f },new(0,0.05f,0),new Color(1,0.8f,0.1f,0.5f));
+        v.Body=new StaticBody3D { CollisionLayer=2,CollisionMask=0 };v.Body.SetMeta("formation_id",f.Id);v.Root.AddChild(v.Body);
+        v.Body.AddChild(new CollisionShape3D { Shape=new BoxShape3D { Size=new(6,2.5f,4.5f) },Position=new(0,1,0) });
+        v.Label=new Label3D { Position=new(0,3.5f,0),FontSize=40,PixelSize=0.025f,Billboard=BaseMaterial3D.BillboardModeEnum.Enabled };v.Root.AddChild(v.Label);
+        v.Intent=AddMesh(this,new CylinderMesh { TopRadius=0.65f,BottomRadius=0.65f,Height=0.15f },Vector3.Zero,Colors.Orange);
+        v.RouteLine=new MeshInstance3D { MaterialOverride=new StandardMaterial3D { AlbedoColor=Colors.Orange,ShadingMode=BaseMaterial3D.ShadingModeEnum.Unshaded } };AddChild(v.RouteLine);
+        visuals[f.Id]=v;
     }
     private void UpdateCamera()
     {
-        camera.Projection=mode==2?Camera3D.ProjectionType.Orthogonal:Camera3D.ProjectionType.Perspective;
-        camera.Size=distance;
-        float p=mode==0?0.85f:mode==2?1.55f:pitch;
-        float y=mode==0?0.65f:mode==2?0:yaw;
-        camera.Position=focus+new Vector3(MathF.Sin(y)*MathF.Cos(p),MathF.Sin(p),MathF.Cos(y)*MathF.Cos(p))*distance;
-        camera.LookAt(focus,Vector3.Up);
+        camera.Projection=mode==2?Camera3D.ProjectionType.Orthogonal:Camera3D.ProjectionType.Perspective;camera.Size=distance;
+        float p=mode==0?0.85f:mode==2?1.55f:pitch,y=mode==0?0.65f:mode==2?0:yaw;
+        camera.Position=focus+new Vector3(MathF.Sin(y)*MathF.Cos(p),MathF.Sin(p),MathF.Cos(y)*MathF.Cos(p))*distance;camera.LookAt(focus,Vector3.Up);
+    }
+    private Godot.Collections.Dictionary Hit(Vector2 screen,uint mask)
+    {
+        var from=camera.ProjectRayOrigin(screen);
+        var result=GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from,from+camera.ProjectRayNormal(screen)*400,mask));
+        // Trimesh vertex/edge precision can reject an exact pixel ray. Retry within a quarter pixel for terrain only.
+        if(result.Count==0&&mask==1)
+            foreach(var offset in new[]{new Vector2(0.2f,0),new Vector2(-0.2f,0),new Vector2(0,0.2f),new Vector2(0,-0.2f)})
+            {
+                var point=screen+offset;from=camera.ProjectRayOrigin(point);
+                result=GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from,from+camera.ProjectRayNormal(point)*400,mask));
+                if(result.Count>0)break;
+            }
+        return result;
     }
     public override void _UnhandledInput(InputEvent e)
     {
         if(e is InputEventKey key && key.Pressed && !key.Echo)
         {
             if(key.Keycode==Key.Space) battle.SetPaused(!battle.Paused);
-            if(key.Keycode>=Key.Key1 && key.Keycode<=Key.Key3) { mode=(int)key.Keycode-(int)Key.Key1; UpdateCamera(); }
+            if(key.Keycode>=Key.Key1 && key.Keycode<=Key.Key3) { mode=(int)key.Keycode-(int)Key.Key1;UpdateCamera(); }
+            if(key.Keycode==Key.Tab) selected.SelectMany(battle.OwnFormations(1).Select(f=>f.Id),battle.OwnFormations(1));
+            if(key.Keycode==Key.H) Issue(OrderKind.Hold,default);
+            if(key.Keycode==Key.R) Issue(OrderKind.Rally,default);
+            if(key.Keycode==Key.X) { withdrawMode=true;message="Withdraw: right-click a safe terrain destination."; }
+            if(key.Keycode==Key.F1) { helpPanel.Visible=!helpPanel.Visible;statusPanel.Visible=helpPanel.Visible; }
+            if(key.Keycode==Key.F9) GetTree().ReloadCurrentScene();
+            if(key.Keycode==Key.Equal) speed=Math.Min(4,speed*2);
+            if(key.Keycode==Key.Minus) speed=Math.Max(0.5f,speed/2);
         }
-        if(e is InputEventMouseMotion motion && (motion.ButtonMask & MouseButtonMask.Middle)!=0 && mode==1)
-        { yaw-=motion.Relative.X*0.006f; pitch=Math.Clamp(pitch+motion.Relative.Y*0.006f,0.15f,1.5f); UpdateCamera(); }
-        if(e is not InputEventMouseButton mouse || !mouse.Pressed) return;
-        if(mouse.ButtonIndex==MouseButton.WheelUp || mouse.ButtonIndex==MouseButton.WheelDown)
-        { distance=Math.Clamp(distance+(mouse.ButtonIndex==MouseButton.WheelUp?-4:4),15,130); UpdateCamera(); return; }
-        var from=camera.ProjectRayOrigin(mouse.Position);
-        var query=PhysicsRayQueryParameters3D.Create(from,from+camera.ProjectRayNormal(mouse.Position)*400,mouse.ButtonIndex==MouseButton.Left?2u:1u);
-        var hit=GetWorld3D().DirectSpaceState.IntersectRay(query);
-        if(mouse.ButtonIndex==MouseButton.Left) selected=hit.Count>0;
-        if(mouse.ButtonIndex==MouseButton.Right && selected && hit.Count>0)
+        if(e is InputEventMouseMotion motion)
         {
-            Vector3 point=hit["position"].AsVector3();
-            if(MathF.Abs(point.X)<=48 && MathF.Abs(point.Z)<=48)
-                battle.IssueMove(new((int)MathF.Round(point.X*1000),(int)MathF.Round(point.Z*1000)),mouse.ShiftPressed);
+            if(drag) { dragEnd=motion.Position;selectionOverlay.Box=new Rect2(dragStart,dragEnd-dragStart).Abs();selectionOverlay.QueueRedraw(); }
+            if((motion.ButtonMask & MouseButtonMask.Middle)!=0 && mode==1) { yaw-=motion.Relative.X*0.006f;pitch=Math.Clamp(pitch+motion.Relative.Y*0.006f,0.15f,1.5f);UpdateCamera(); }
         }
+        if(e is not InputEventMouseButton mouse) return;
+        if(mouse.ButtonIndex==MouseButton.Left)
+        {
+            if(mouse.Pressed)
+            {
+                drag=true;dragStart=dragEnd=mouse.Position;var hit=Hit(mouse.Position,2);
+                if(hit.Count>0&&hit["collider"].AsGodotObject() is Node collider)
+                    selected.Select(collider.GetMeta("formation_id").AsInt32(),battle.OwnFormations(1),mouse.ShiftPressed);
+                else if(!mouse.ShiftPressed) selected.Clear();
+            }
+            else if(drag)
+            {
+                drag=false;selectionOverlay.Box=default;selectionOverlay.QueueRedraw();
+                if(dragStart.DistanceTo(mouse.Position)>8)
+                {
+                    var rect=new Rect2(dragStart,mouse.Position-dragStart).Abs();
+                    selected.SelectMany(battle.OwnFormations(1).Where(f=>!camera.IsPositionBehind(World(f.Position))&&rect.HasPoint(camera.UnprojectPosition(World(f.Position,1)))).Select(f=>f.Id),battle.OwnFormations(1),mouse.ShiftPressed);
+                }
+            }
+            return;
+        }
+        if(!mouse.Pressed) return;
+        if(mouse.ButtonIndex==MouseButton.WheelUp||mouse.ButtonIndex==MouseButton.WheelDown)
+        { distance=Math.Clamp(distance+(mouse.ButtonIndex==MouseButton.WheelUp?-4:4),15,140);UpdateCamera();return; }
+        if(mouse.ButtonIndex!=MouseButton.Right||selected.Ids.Length==0) return;
+        var formationHit=Hit(mouse.Position,2);
+        if(!withdrawMode&&formationHit.Count>0&&formationHit["collider"].AsGodotObject() is Node unit)
+        {
+            int id=unit.GetMeta("formation_id").AsInt32();var enemy=battle.Perception(1).Visible.FirstOrDefault(f=>f.Id==id);
+            if(enemy is not null) { Issue(OrderKind.Attack,enemy.Position,id);return; }
+        }
+        var ground=Hit(mouse.Position,1);
+        if(ground.Count==0) { message="Click navigable terrain.";return; }
+        var point=ground["position"].AsVector3();var target=new Position((int)MathF.Round(point.X*1000),(int)MathF.Round(point.Z*1000));
+        Issue(withdrawMode?OrderKind.Withdraw:OrderKind.Move,target,null,mouse.ShiftPressed);withdrawMode=false;
+    }
+    private void Issue(OrderKind kind,Position target,int? enemy=null,bool append=false)
+    {
+        var error=battle.IssueGroup(1,selected.Ids,kind,target,enemy,append);
+        message=error??$"{kind} ordered for {selected.Ids.Length} formation(s).";
     }
     public override void _Process(double delta)
     {
-        // Retain conversion remainder so frame partitioning does not discard fractional clock ticks.
         if(!battle.Paused)
         {
-            elapsedRemainder+=delta*TimeSpan.TicksPerSecond;
-            long ticks=(long)elapsedRemainder; elapsedRemainder-=ticks;
-            battle.Advance(TimeSpan.FromTicks(ticks));
+            elapsedRemainder+=delta*speed*TimeSpan.TicksPerSecond;long ticks=(long)elapsedRemainder;elapsedRemainder-=ticks;battle.Advance(TimeSpan.FromTicks(ticks));
         }
-        float x=0,z=0;
-        if(Input.IsPhysicalKeyPressed(Key.A)) x-=1; if(Input.IsPhysicalKeyPressed(Key.D)) x+=1;
-        if(Input.IsPhysicalKeyPressed(Key.W)) z-=1; if(Input.IsPhysicalKeyPressed(Key.S)) z+=1;
-        focus+=new Vector3(x,0,z)*(float)delta*25; focus.X=Math.Clamp(focus.X,-48,48); focus.Z=Math.Clamp(focus.Z,-48,48);
-        UpdateCamera(); SyncPresentation();
-        if(smoke) RunSmoke();
+        float x=0,z=0;if(Input.IsPhysicalKeyPressed(Key.A))x--;if(Input.IsPhysicalKeyPressed(Key.D))x++;if(Input.IsPhysicalKeyPressed(Key.W))z--;if(Input.IsPhysicalKeyPressed(Key.S))z++;
+        focus+=new Vector3(x,0,z)*(float)delta*25;focus.X=Math.Clamp(focus.X,-48,48);focus.Z=Math.Clamp(focus.Z,-48,48);
+        UpdateCamera();SyncPresentation();if(legacySmoke) RunLegacySmoke();if(tacticalSmoke) RunTacticalSmoke();
     }
     private void SyncPresentation()
     {
-        var p=battle.Formation.Position; formation.Position=new(p.X/1000f,Terrain.Height(p.X/1000f,p.Z/1000f),p.Z/1000f);
-        selection.Visible=selected;
-        Position? intent=battle.Pending.Count>0?battle.Pending[^1].Target:battle.Formation.Destination;
-        targetMarker.Visible=intent.HasValue;
-        if(intent is Position t) targetMarker.Position=new(t.X/1000f,Terrain.Height(t.X/1000f,t.Z/1000f)+0.2f,t.Z/1000f);
-        status.Text=$@"{(battle.Paused?"PAUSED — orders pending until resume":"RUNNING")} | Tick {battle.Tick} | {new[]{"RTS","Free","Overhead"}[mode]}
-Formation 1: {battle.Formation.Strength} troops | {(selected?"SELECTED":"click blue formation to select")}
-Position {p.X/1000f:F1}, {p.Z/1000f:F1} m | Pending {battle.Pending.Count}, waypoints {battle.Waypoints.Length}";
-    }
-    // Exercises the same input adapter and actual terrain/formation raycasts in the engine.
-    private void RunSmoke()
-    {
-        if(!smoke) return;
-        try
+        selected.Prune(battle.OwnFormations(1));
+        foreach(var f in battle.Formations)
         {
-            if(++smokeFrames>120) throw new Exception("smoke timeout");
-            void Assert(bool condition,string name) { if(!condition) throw new Exception(name); }
-            void KeyPress(Key key)=>_UnhandledInput(new InputEventKey { Keycode=key,Pressed=true });
-            void Click(MouseButton button,Vector3 point,bool shift=false)=>_UnhandledInput(new InputEventMouseButton { ButtonIndex=button,Pressed=true,Position=camera.UnprojectPosition(point),ShiftPressed=shift });
-            switch(smokeStage++)
+            var v=visuals[f.Id];bool show=f.Active&&(f.Faction==1||battle.Perception(1).IsVisible(f.Id));
+            v.Root.Visible=show;v.Body.CollisionLayer=show?2u:0u;v.Root.Position=World(f.Position);v.Root.Rotation=new(0,-f.Facing*MathF.PI/1800,0);
+            v.Disk.Visible=selected.Ids.Contains(f.Id);v.Label.Text=$"{f.Id} {f.Kind} | {f.Strength}\n{f.Status}";
+            for(int i=0;i<v.Troops.Count;i++)v.Troops[i].Visible=i<Math.Ceiling((double)f.Strength/f.InitialStrength*v.Troops.Count);
+            Position? intent=f.Faction==1?battle.PendingOrders.LastOrDefault(o=>o.FormationId==f.Id&&o.Kind is OrderKind.Move or OrderKind.Withdraw or OrderKind.Attack)?.Target??f.Destination:null;
+            if(intent is null&&f.Faction==1&&f.CurrentOrder?.Kind==OrderKind.Attack) intent=battle.Perception(1).Visible.FirstOrDefault(e=>e.Id==f.CurrentOrder.TargetId)?.Position;
+            v.Intent.Visible=show&&selected.Ids.Contains(f.Id)&&intent.HasValue;v.RouteLine.Visible=v.Intent.Visible;
+            if(intent is Position target)
             {
-                case 0: return; // Physics registration needs a frame.
-                case 1:
-                    Click(MouseButton.Left,formation.Position+Vector3.Up); Assert(selected,"selection raycast");
-                    Click(MouseButton.Right,new Vector3(-15,Terrain.Height(-15,0),0)); Assert(battle.Pending.Count==1,"terrain move raycast"); break;
-                case 2:
-                    Assert(battle.Formation.Position.X>-20000,"live movement");
-                    Click(MouseButton.Right,new Vector3(-25,Terrain.Height(-25,0),0)); Assert(battle.Pending.Count==1,"live reissue");
-                    KeyPress(Key.Space); pausePosition=battle.Formation.Position; pauseTick=battle.Tick;
-                    Click(MouseButton.Right,new Vector3(-18,Terrain.Height(-18,2),2));
-                    Click(MouseButton.Right,new Vector3(-16,Terrain.Height(-16,4),4),true); break;
-                case 3:
-                    Assert(battle.Tick==pauseTick && battle.Formation.Position==pausePosition,"pause freeze");
-                    Assert(battle.Pending.Count==3,"paused order queue");
-                    KeyPress(Key.Key2); Assert(mode==1 && camera.Projection==Camera3D.ProjectionType.Perspective,"free camera");
-                    var oldCamera=camera.Position;
-                    _UnhandledInput(new InputEventMouseMotion { Relative=new(20,10),ButtonMask=MouseButtonMask.Middle });
-                    Assert(camera.Position!=oldCamera,"free orbit");
-                    float oldDistance=distance;
-                    _UnhandledInput(new InputEventMouseButton { ButtonIndex=MouseButton.WheelUp,Pressed=true });
-                    Assert(distance<oldDistance,"camera zoom");
-                    KeyPress(Key.Key3); Assert(mode==2 && camera.Projection==Camera3D.ProjectionType.Orthogonal,"overhead camera");
-                    KeyPress(Key.Key1); Assert(mode==0,"RTS camera"); KeyPress(Key.Space); break;
-                case 4:
-                    if(battle.Tick<=pauseTick) { smokeStage--; return; }
-                    Assert(battle.Tick>pauseTick && battle.Pending.Count==0,"resume delivery");
-                    GD.Print("PASS Godot integration: selection, terrain raycast move, live reissue, pause queue/resume, three cameras, orbit and zoom"); GetTree().Quit(0); break;
+                v.Intent.Position=World(target,0.25f);var line=new ImmediateMesh();line.SurfaceBegin(Mesh.PrimitiveType.Lines);
+                var last=World(f.Position,0.5f);var route=f.PlannedRoute.Count>0?f.PlannedRoute:new[]{target};
+                foreach(var p in route) { var next=World(p,0.5f);line.SurfaceAddVertex(last);line.SurfaceAddVertex(next);last=next; }
+                line.SurfaceEnd();v.RouteLine.Mesh=line;
             }
         }
-        catch(Exception e) { GD.PrintErr($"FAIL Godot smoke: {e}"); GetTree().Quit(1); }
+        while(eventCursor<battle.Events.Count)
+        {
+            var e=battle.Events[eventCursor++];
+            if(e.Kind=="Volley"&&e.OtherId is int target && visuals[e.FormationId].Root.Visible&&visuals[target].Root.Visible)
+            {
+                var mesh=new ImmediateMesh();mesh.SurfaceBegin(Mesh.PrimitiveType.Lines);mesh.SurfaceAddVertex(World(battle.GetFormation(e.FormationId).Position,2));mesh.SurfaceAddVertex(World(battle.GetFormation(target).Position,2));mesh.SurfaceEnd();
+                var tracer=new MeshInstance3D { Mesh=mesh,MaterialOverride=new StandardMaterial3D { AlbedoColor=Colors.Yellow,ShadingMode=BaseMaterial3D.ShadingModeEnum.Unshaded } };AddChild(tracer);
+                GetTree().CreateTimer(0.3).Timeout+=()=> { if(GodotObject.IsInstanceValid(tracer))tracer.QueueFree(); };
+            }
+        }
+        summary.Text=$"{battle.Outcome??(battle.Paused?"PAUSED":"RUNNING")} | {speed:0.0}x | Tick {battle.Tick} | {new[]{"RTS","Free","Overhead"}[mode]}\nSelected {string.Join(",",selected.Ids)} | Visible enemies {battle.Perception(1).Visible.Count} | Pending {battle.PendingOrders.Count(o=>o.Faction==1)}\n{message}";
+        status.Text=string.Join("\n",battle.OwnFormations(1).Select(f=>$"{f.Id} {f.Kind,-8} {f.Strength,2}/{f.InitialStrength} | Ammo {f.Ammunition,2} | M {f.Morale/10,3} C {f.Cohesion/10,3} F {f.Fatigue/10,3} | Face {f.Facing/10,3} | {f.Status} | {f.CurrentOrder?.Kind.ToString()??"Hold"}: {f.CommandStatus}"));
+        if(battle.Outcome is not null) status.Text+="\nAI after-action: "+string.Join(" | ",battle.Decisions.TakeLast(4).Select(d=>$"{d.Tick}:{d.Plan}"));
+        statusPanel.Position=new(10,Math.Max(160,GetViewport().GetVisibleRect().Size.Y-230));
+    }
+    private void Assert(bool condition,string name) { if(!condition)throw new Exception(name); }
+    private void KeyPress(Key key)=>_UnhandledInput(new InputEventKey { Keycode=key,Pressed=true });
+    private void Click(MouseButton button,Vector3 point,bool shift=false)
+    {
+        var screen=camera.UnprojectPosition(point);
+        _UnhandledInput(new InputEventMouseButton { ButtonIndex=button,Pressed=true,Position=screen,ShiftPressed=shift });
+        if(button==MouseButton.Left) _UnhandledInput(new InputEventMouseButton { ButtonIndex=button,Pressed=false,Position=screen,ShiftPressed=shift });
+    }
+    private void SmokeFail(Exception e) { GD.PrintErr($"FAIL Godot smoke: {e}");GetTree().Quit(1); }
+    private void RunLegacySmoke()
+    {
+        try
+        {
+            if(++smokeFrames>120)throw new Exception("legacy smoke timeout");var f=battle.Formation;
+            switch(smokeStage++)
+            {
+                case 0:return;
+                case 1:Click(MouseButton.Left,World(f.Position,1));Assert(selected.Ids.SequenceEqual(new[]{1}),"selection raycast");Click(MouseButton.Right,World(new(-15000,0)));Assert(battle.Pending.Count==1,"terrain move raycast");break;
+                case 2:Assert(f.Position.X>-20000,"live movement");Click(MouseButton.Right,World(new(-25000,0)));Assert(battle.Pending.Count==1,"live reissue");KeyPress(Key.Space);pauseTick=battle.Tick;pausedPositions=new[]{f.Position};Click(MouseButton.Right,World(new(-18000,2000)));Click(MouseButton.Right,World(new(-16000,4000)),true);break;
+                case 3:Assert(battle.Tick==pauseTick&&f.Position==pausedPositions[0],"pause freeze");Assert(battle.Pending.Count==3,$"paused order queue count={battle.Pending.Count}, message={message}, paused={battle.Paused}, selected={string.Join(",",selected.Ids)}");CheckCameras();KeyPress(Key.Space);break;
+                case 4:if(battle.Tick<=pauseTick){smokeStage--;return;}Assert(battle.Pending.Count==0,"resume delivery");GD.Print("PASS Godot integration: selection, terrain raycast move, live reissue, pause queue/resume, three cameras, orbit and zoom");GetTree().Quit(0);break;
+            }
+        }catch(Exception e){SmokeFail(e);}
+    }
+    private void CheckCameras()
+    {
+        KeyPress(Key.Key2);Assert(mode==1&&camera.Projection==Camera3D.ProjectionType.Perspective,"free camera");var old=camera.Position;
+        _UnhandledInput(new InputEventMouseMotion { Relative=new(20,10),ButtonMask=MouseButtonMask.Middle });Assert(camera.Position!=old,"free orbit");float before=distance;
+        _UnhandledInput(new InputEventMouseButton { ButtonIndex=MouseButton.WheelUp,Pressed=true });Assert(distance<before,"zoom");KeyPress(Key.Key3);Assert(mode==2&&camera.Projection==Camera3D.ProjectionType.Orthogonal,"overhead");KeyPress(Key.Key1);Assert(mode==0,"RTS");
+    }
+    private void RunTacticalSmoke()
+    {
+        try
+        {
+            if(++smokeFrames>180)throw new Exception("tactical smoke timeout");
+            switch(smokeStage++)
+            {
+                case 0:return;
+                case 1:
+                    Assert(battle.Formations.Count==12,"multiple formations");Click(MouseButton.Left,World(battle.GetFormation(3).Position,1));Click(MouseButton.Left,World(battle.GetFormation(4).Position,1),true);
+                    Assert(selected.Ids.SequenceEqual(new[]{3,4}),"multi-selection");
+                    var a=camera.UnprojectPosition(World(battle.GetFormation(3).Position,1));var b=camera.UnprojectPosition(World(battle.GetFormation(4).Position,1));
+                    var start=new Vector2(Math.Min(a.X,b.X)-4,Math.Min(a.Y,b.Y)-4);var end=new Vector2(Math.Max(a.X,b.X)+4,Math.Max(a.Y,b.Y)+4);
+                    _UnhandledInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left,Pressed=true,Position=start });
+                    _UnhandledInput(new InputEventMouseMotion { Position=end,ButtonMask=MouseButtonMask.Left });
+                    _UnhandledInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left,Pressed=false,Position=end });
+                    Assert(selected.Ids.SequenceEqual(new[]{3,4}),$"box-selection adapter ids={string.Join(",",selected.Ids)} start={start} end={end} a={a} b={b}");
+                    Assert(battle.OwnFormations(2).All(f=>!visuals[f.Id].Root.Visible&&visuals[f.Id].Body.CollisionLayer==0),"concealed enemy render/picking leak");
+                    Click(MouseButton.Right,World(new(-32000,-2500)));Assert(battle.PendingOrders.Count(o=>o.Faction==1)==2,"group terrain move");break;
+                case 2:
+                    Assert(selected.Ids.All(id=>battle.GetFormation(id).Position.X>-42000),"group movement");Click(MouseButton.Right,World(new(-40000,-2500)));KeyPress(Key.Space);
+                    pauseTick=battle.Tick;pausedPositions=selected.Ids.Select(id=>battle.GetFormation(id).Position).ToArray();
+                    Click(MouseButton.Right,World(new(-36000,-2500)));Click(MouseButton.Right,World(new(-34000,-2500)),true);break;
+                case 3:
+                    Assert(battle.Tick==pauseTick&&selected.Ids.Select(id=>battle.GetFormation(id).Position).SequenceEqual(pausedPositions),"tactical pause freeze");Assert(battle.PendingOrders.Count(o=>o.Faction==1)==6,"paused group queue");CheckCameras();KeyPress(Key.Space);break;
+                case 4:
+                    if(battle.Tick<=pauseTick){smokeStage--;return;}Assert(battle.PendingOrders.Count(o=>o.Faction==1)==0,"group resume delivery");KeyPress(Key.H);break;
+                case 5:
+                    if(battle.PendingOrders.Any(o=>o.Faction==1)){smokeStage--;return;}
+                    Assert(selected.Ids.All(id=>battle.GetFormation(id).CurrentOrder?.Kind==OrderKind.Hold),"hold input");
+                    KeyPress(Key.X);Click(MouseButton.Right,World(new(-41000,-2500)));Assert(battle.PendingOrders.Any(o=>o.Kind==OrderKind.Withdraw&&o.Faction==1),"withdraw input");
+                    KeyPress(Key.R);Assert(battle.PendingOrders.Any(o=>o.Kind==OrderKind.Rally&&o.Faction==1),"rally input");
+                    KeyPress(Key.Tab);Assert(selected.Ids.Length==6,"select all");
+                    GD.Print("PASS Gate 1 Godot integration: 12 formations, click/shift/box-selection, group move/reissue, pause queue/resume, hold/withdraw/rally, hidden enemy render/pick boundary, cameras/orbit/zoom");GetTree().Quit(0);break;
+            }
+        }catch(Exception e){SmokeFail(e);}
     }
 }

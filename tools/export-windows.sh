@@ -20,4 +20,4 @@ curl -fsSL https://raw.githubusercontent.com/godotengine/godot/4.6.3-stable/LICE
 curl -fsSL https://raw.githubusercontent.com/godotengine/godot/4.6.3-stable/COPYRIGHT.txt -o "$output/licenses/GODOT-THIRD-PARTY-NOTICES.txt"
 cp "$NUGET_PACKAGES/microsoft.netcore.app.runtime.win-x64/8.0.32/LICENSE.TXT" "$output/licenses/DOTNET-LICENSE.txt"
 cp "$NUGET_PACKAGES/microsoft.netcore.app.runtime.win-x64/8.0.32/THIRD-PARTY-NOTICES.TXT" "$output/licenses/DOTNET-THIRD-PARTY-NOTICES.txt"
-python3 tools/package-windows.py "$output" builds/Fantasy-Warfare-Gate0-Windows-x64.zip
+python3 tools/package-windows.py "$output" builds/Fantasy-Warfare-Gate1-Windows-x64.zip

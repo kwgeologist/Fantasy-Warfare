@@ -29,16 +29,16 @@ exe = (stage / "FantasyWarfare.exe").read_bytes()
 pe = struct.unpack_from("<I", exe, 0x3c)[0]
 if exe[:2] != b"MZ" or exe[pe:pe + 4] != b"PE\0\0" or struct.unpack_from("<H", exe, pe + 4)[0] != 0x8664:
     raise SystemExit("Expected a Windows x64 PE executable")
-for name in ("README-WINDOWS.txt", "Verify-Gate0.cmd"):
+for name in ("README-WINDOWS.txt", "Verify-Gate0.cmd", "Verify-Gate1.cmd"):
     text = (root / "tools/windows" / name).read_text()
     (stage / name).write_bytes(text.replace("\n", "\r\n").encode("utf-8"))
 (stage / "build-manifest.json").unlink(missing_ok=True)
 def digest(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
-source_files = subprocess.check_output(["git", "ls-files", "-z", "src", "tests", "game/Scripts", "game/Scenes", "game/project.godot"], cwd=root).decode().split("\0")
+source_files = subprocess.check_output(["git", "ls-files", "-z", "src", "tests", "game/Scripts", "game/Scenes", "game/project.godot", "scenarios"], cwd=root).decode().split("\0")
 manifest = {
-    "package": "Fantasy-Warfare-Gate0-Windows-x64", "godot": "4.6.3", "dotnet_runtime": "8.0.32",
-    "self_contained": True, "architecture": "x86_64", "milestone": "Gate 0 only",
+    "package": "Fantasy-Warfare-Gate1-Windows-x64", "godot": "4.6.3", "dotnet_runtime": "8.0.32",
+    "self_contained": True, "architecture": "x86_64", "milestone": "Gate 1 tactical foundation",
     "source_commit_at_packaging": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root).decode().strip(),
     "gameplay_source_sha256": {f: digest(root / f) for f in source_files if f},
     "files_sha256": {p.relative_to(stage).as_posix(): digest(p) for p in sorted(stage.rglob("*")) if p.is_file()},
@@ -49,7 +49,7 @@ archive.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for p in sorted(stage.rglob("*")):
         if p.is_file():
-            z.write(p, "Fantasy-Warfare-Gate0-Windows-x64/" + p.relative_to(stage).as_posix())
+            z.write(p, "Fantasy-Warfare-Gate1-Windows-x64/" + p.relative_to(stage).as_posix())
 with zipfile.ZipFile(archive) as z:
     if z.testzip() is not None:
         raise SystemExit("ZIP integrity check failed")

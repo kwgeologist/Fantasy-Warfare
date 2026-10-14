@@ -7,8 +7,8 @@ public static class CombatRules
         int power=ranged?40:attacker.Definition.MeleePower;
         int angle=Battle.FacingDifference(defender.Facing,Battle.FacingTo(defender.Position,attacker.Position));
         if(angle>1200) power=power*170/100;else if(angle>650) power=power*130/100;
-        if(attacker.Kind==UnitKind.Cavalry&&defender.Kind==UnitKind.Spearmen&&angle<650&&defender.Cohesion>500&&defender.Status!=FormationStatus.Routing) power=power*30/100;
-        if(attacker.Kind==UnitKind.Spearmen&&defender.Kind==UnitKind.Cavalry) power=power*140/100;
+        if(attacker.Definition.Weapon==WeaponKind.Lance&&defender.Definition.Weapon==WeaponKind.Spear&&angle<650&&defender.Cohesion>500&&defender.Status!=FormationStatus.Routing) power=power*30/100;
+        if(attacker.Definition.Weapon==WeaponKind.Spear&&defender.Definition.Weapon==WeaponKind.Lance) power=power*140/100;
         if(map.Cell(attacker.Position).Kind==TerrainKind.Forest&&attacker.Kind==UnitKind.Cavalry) power=power/2;
         if(ranged&&map.Cell(defender.Position).Kind==TerrainKind.Forest) power=power*65/100;
         power=power*Math.Clamp(1000-attacker.Fatigue/2,500,1000)/1000*Math.Max(300,attacker.Cohesion)/1000;
@@ -28,7 +28,7 @@ public sealed partial class Battle
         {
             var visible=perceptions[attacker.Faction].Visible;
             var candidates=formations.Where(f=>f.Faction!=attacker.Faction&&f.Active&&visible.Any(e=>e.Id==f.Id)).OrderBy(f=>Position.DistanceSquared(attacker.Position,f.Position)).ThenBy(f=>f.Id).ToArray();
-            var melee=candidates.FirstOrDefault(f=>Position.Distance(attacker.Position,f.Position)<=attacker.Definition.Radius+f.Definition.Radius+1200&&Map.HasLineOfSight(attacker.Position,f.Position));
+            var melee=candidates.FirstOrDefault(f=>Position.Distance(attacker.Position,f.Position)<=attacker.Definition.Radius+f.Definition.Radius+1200&&Map.SegmentClear(attacker.Position,f.Position,0));
             bool ranged=melee is null&&attacker.Kind==UnitKind.Archers&&attacker.Ammunition>0&&!attacker.MovedThisTick;
             var target=melee??(ranged?candidates.FirstOrDefault(f=>Position.Distance(attacker.Position,f.Position)<=attacker.Definition.Range&&Map.HasLineOfSight(attacker.Position,f.Position)):null);
             if(target is null) continue;
@@ -73,6 +73,7 @@ public sealed partial class Battle
                 if(nearby.Any(e=>FacingDifference(f.Facing,FacingTo(f.Position,e.Position))>1000)) { f.Morale=Math.Max(0,f.Morale-25);f.Cohesion=Math.Max(0,f.Cohesion-10); }
                 if(routers.Any(o=>o.Id!=f.Id&&o.Faction==f.Faction&&Position.Distance(o.Position,f.Position)<14000)) f.Morale=Math.Max(0,f.Morale-40);
                 if(nearby.Length==0&&f.Status!=FormationStatus.Routing) f.Morale=Math.Min(900,f.Morale+5);
+                if(f.Status==FormationStatus.Withdrawing&&nearby.Length>0) f.Cohesion=Math.Max(0,f.Cohesion-Math.Max(1,(100-f.Definition.Discipline)/20));
                 if(f.Fatigue>850) f.Morale=Math.Max(0,f.Morale-5);
             }
             if(f.Status==FormationStatus.Rallying)

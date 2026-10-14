@@ -1,6 +1,6 @@
 config_version=5
 [application]
-config/name="Fantasy Warfare — Gate 0"
+config/name="Fantasy Warfare — Gate 1"
 run/main_scene="res://Scenes/Battle.tscn"
 config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
 [display]

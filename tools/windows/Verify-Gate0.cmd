@@ -8,7 +8,7 @@ start "" /wait "FantasyWarfare.exe" --headless --fixed-fps 20 --log-file "%CD%\g
 if errorlevel 1 goto failure
 findstr /C:"PASS Godot integration:" "gate0-smoke.log" >nul
 if errorlevel 1 goto failure
-echo PASS: eight core tests and exported-game integration check completed.
+echo PASS: simulation suite and Gate 0 control regression completed.
 if /I not "%~1"=="/nopause" pause
 exit /b 0
 :failure

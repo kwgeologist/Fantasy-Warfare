@@ -1,58 +1,67 @@
-FANTASY WARFARE — GATE 0 WINDOWS x64
+FANTASY WARFARE — GATE 1 TACTICAL FOUNDATION — WINDOWS x64
 
-RUN
-1. Extract the ENTIRE ZIP to a writable local folder (not inside the ZIP viewer).
-2. Double-click FantasyWarfare.exe. No Godot, .NET SDK or separate .NET Runtime install is required.
-3. Keep FantasyWarfare.pck and data_FantasyWarfare_windows_x86_64 beside the executable.
-Close the window to exit. No installer or administrator privileges are needed.
-
-REQUIREMENTS AND LIMITATIONS
-Windows 10/11, 64-bit x86 processor; graphics driver supporting OpenGL 3.3.
-Hardware-specific graphics drivers and Windows system DLLs are supplied by Windows/the hardware vendor, not this ZIP.
-The package includes Godot 4.6.3 .NET release engine, Microsoft .NET 8.0.32 runtime, the game/simulation DLLs, and the original test harness.
-No separate Visual C++ Redistributable is required by the bundled native binaries: they import Windows system/UCRT libraries.
-Offline play; no account, API, online AI, or external game assets required.
-Unsigned test build: Windows may show an unknown-publisher/SmartScreen notice. This is not a signed installer.
-Windows ARM64/native ARM builds and 32-bit Windows are not validated or included.
+EXTRACT AND RUN
+Extract ALL files to a writable local folder and double-click FantasyWarfare.exe.
+Keep FantasyWarfare.pck and data_FantasyWarfare_windows_x86_64 beside it.
+Godot 4.6.3 .NET engine and Microsoft .NET 8.0.32 runtime are included.
+No Godot editor, .NET SDK, separate .NET Runtime or Visual C++ Redistributable install is required.
+Windows 10/11 x64 with an OpenGL 3.3 graphics driver is required; hardware drivers are not bundled.
+Portable unsigned build; Windows may show an unknown-publisher/SmartScreen notice.
+No installer/admin privileges, account, paid API, or online connection is needed to play.
 
 CONTROLS
-Left click blue formation: select; left click empty terrain: deselect.
-Right click terrain: replace move order, including during movement.
-Shift + right click: append waypoint.
-Space: tactical pause/resume. Paused orders execute only after resumption.
-1: elevated RTS; 2: free orbit; 3: overhead orthographic.
-WASD: pan; wheel: zoom; middle drag: orbit/tilt in Free view.
-Yellow disk: selection; orange marker: current/latest pending destination.
+Click a blue formation to select; Shift-click toggles an additional formation.
+Drag a rectangle to multi-select; Shift-drag adds. Tab selects all surviving friendlies.
+Right-click terrain for offset-preserving group movement; Shift-right-click appends waypoints.
+Right-click a CURRENTLY VISIBLE red formation to attack. Hidden/stale enemies cannot be targeted.
+Space pauses/resumes; paused orders execute at fixed ticks after resume.
+H holds; X then right-click chooses a controlled withdrawal destination; R rallies survivors if safe.
+1 RTS; 2 free orbit; 3 overhead. WASD pan, wheel zoom, middle drag orbit/tilt in free mode.
+- / = changes simulation speed (0.5x, 1x, 2x, 4x). F1 hides/shows the HUD; F9 restarts.
+Yellow disk = selection; orange marker/line = issued destination/path.
+White line on formation = facing. Yellow tracers = actual ranged volleys.
+HUD shows ID, class, surviving strength, ammo, M morale, C cohesion, F fatigue, facing and current orders.
+Routing formations refuse movement/attack until a safe rally; an atomic group order is rejected if any selected footprint/destination is invalid.
 
-WHAT WORKS / WHAT IS ABSENT
-Same Gate 0 scene and mechanics as the tested project: plain/ridge/woods/valley,
-one selectable formation with 24 troop placeholders, live orders, waypoints,
-pause and deterministic 20 Hz simulation, and three cameras.
-Woods are traversable visuals; movement is straight and terrain does not yet change speed or LOS.
-No tactical combat, enemies/AI, morale, multi-formation play, campaign, magic, multiplayer or map importer.
-No 50,000-troop performance claim; no save/load yet. Terrain label clipping is a known placeholder-art limitation.
+FEATURES
+Six formations per side: infantry/swords, spearmen, archers/bows and cavalry/lances.
+Roads/open/forest/slopes change movement; rock is impassable; conservative formation footprints route around obstacles.
+Ridges and woods block line of sight; factions share legitimately observed contacts.
+Melee/ranged attacks, ammunition, casualties, facing, terrain and range modifiers are seeded and repeatable.
+Fatigue/cohesion/morale, flank pressure, routing panic, withdrawal, rally and army-collapse victory work.
+The enemy commander scouts public terrain, evaluates observed strength, avoids spear fronts,
+screens/withdraws threatened archers, respects ammunition, and revises plans on discovery.
+No omniscient enemy roster, resource buffs or damage bonuses are supplied to it.
 
-OPTIONAL AUTOMATED CHECK
-Double-click Verify-Gate0.cmd. It executes eight independent simulation tests
-against this game's Simulation.dll, then runs this game's headless engine integration test.
-Requires a writable extracted folder to create gate0-smoke.log. For automation use:
-  Verify-Gate0.cmd /nopause
-PASS must be printed and exit code must be 0. No SDK or Godot editor is used.
-The game itself requires no CMD file: double-click FantasyWarfare.exe to play.
+VERIFY WITHOUT DEVELOPMENT TOOLS
+Double-click Verify-Gate1.cmd. For automation: Verify-Gate1.cmd /nopause.
+Runs 44 real simulation tests (including all 8 Gate 0 regressions), the original engine control regression,
+and Gate 1 engine input/visibility tests using this game's exact Simulation.dll/runtime.
+PASS and exit code 0 are required. Fresh gate0-smoke.log/gate1-smoke.log files are created.
 
-VALIDATION STATUS
-Source tests: 8/8 PASS on Linux.
-Exported Windows test executable: 8/8 PASS under Wine using this game's runtime and Simulation.dll.
-Exported Windows engine integration: PASS under Wine (selection, terrain picking,
-live move/reissue, paused order queue/resume, three cameras, free orbit and zoom).
-Rendered Windows executable and real mouse/keyboard checks: exercised under Wine/Mesa.
-These compatibility-layer checks do not establish native Windows/GPU acceptance.
-Please test controls, cameras, terrain and movement on your Windows machine before Gate 1.
+REPRODUCIBLE EVIDENCE
+The surprise scenario reveals enemy spear reserve 2 through actual movement/spotting;
+AI changes Exploit at tick 1 to AvoidSpears at tick 81 and executes a withdrawal order.
+Tests also exercise the default skirmish until it generates real casualties.
+Fixed-seed combat results, events and commander decisions match different frame partitions.
 
-WINDOWS ACCEPTANCE
-Select/move; wait for an exact stop; replace a move while running; pause, replace
-and append orders, wait, then resume. Confirm the formation did not move while paused.
-Switch 1/2/3 and test pan/zoom/orbit. Move across plain, ridge, woods and valley.
-Report Windows version, GPU/driver and any failing step. Normal engine log is in:
-  %APPDATA%\Godot\app_userdata\Fantasy Warfare — Gate 0\logs\godot.log
-See build-manifest.json for source and packaged file hashes; licenses/ for notices.
+LIMITATIONS / TESTING
+Exported Windows binaries and the extracted package are tested under Wine in the build environment.
+Gate 0 passed native Windows user acceptance; this Gate 1 build still needs native Windows/GPU acceptance.
+Placeholder art; no animation or individual soldier physics. Troops are formation-level aggregates.
+Navigation uses a static 2m grid and conservative circular footprints. Local sidestepping may congest
+at moving formations/bottlenecks; it is not a full crowd-navigation system. Group pace is capped at
+its slowest type, but terrain and congestion can separate formations; no rigid synchronized maneuver.
+Combat is an initial configurable abstraction, not validated historical casualty/ballistics modeling.
+Terrain is authored/static; no destructible terrain, save/load, campaign, magic, siege, multiplayer,
+AI map reconstruction or dungeon modules. No large-army performance claim.
+LOS uses center eye height, forest depth and short contact spotting; no weather/night/detection uncertainty.
+Contacts age out after 10 seconds. AI is a bounded rule/utility baseline with commitment windows,
+not a claim of advanced adaptive intelligence. All stats use the same rules on both sides.
+
+TEST ON WINDOWS BEFORE THE NEXT MILESTONE
+Check selection/drag/groups; live orders; pause with replacement/queued orders; all cameras.
+Move across roads/forest/slopes and around rock. Issue visible-enemy attacks; watch casualties,
+ammo, fatigue, morale, routing and rally. Restart to repeat. Report Windows/GPU/driver and failing steps.
+Normal log: %APPDATA%\Godot\app_userdata\Fantasy Warfare — Gate 1\logs\godot.log
+See build-manifest.json for source/file hashes and licenses/ for notices.
