@@ -51,7 +51,7 @@ public partial class CompactHud : Control
         string state=battle.Outcome??(battle.Paused?"PAUSED":"RUNNING");
         overview.Text=$"{state} | {speed:0.0}x | {new[]{"RTS","Free","Overhead"}[camera]} | Selected {ids.Length} | Enemies seen {battle.Perception(1).Visible.Count} | Queued {battle.PendingOrders.Count(o=>o.Faction==1)} | {message}";
         overview.TooltipText=overview.Text;PauseButton.Text=battle.Paused?"Resume [Space]":"Pause [Space]";
-        detailsButton.Text=DetailsExpanded?"Details ▾ [F3]":"Details ▸ [F3]";helpButton.Text=Help.Visible?"Help ▾ [F2]":"Help ▸ [F2]";
+        detailsButton.Text=DetailsExpanded?"Details [-] F3":"Details [+] F3";helpButton.Text=Help.Visible?"Help [-] F2":"Help [+] F2";
         var units=ids.Select(battle.GetFormation).ToArray();
         detailText.Text=string.Join("\n",units.Select(f=>$"{f.Id} {f.Kind} | {f.Strength}/{f.InitialStrength} | Ammo {f.Ammunition} | Face {f.Facing/10}°\nM {f.Morale/10}% C {f.Cohesion/10}% F {f.Fatigue/10}% | {f.MovementSpeed/1000d:0.00} m/s | {battle.Map.Cell(f.Position).Kind}\n{f.Status} | {f.CurrentOrder?.Kind.ToString()??"Hold"}: {f.CommandStatus}"));
         if(battle.Outcome is not null) helpText.Text="Battle ended. F9 restarts.\nAI after-action: "+string.Join("\n",battle.Decisions.TakeLast(4).Select(d=>$"{d.Tick}: {d.Plan}"));

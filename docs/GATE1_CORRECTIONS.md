@@ -42,6 +42,7 @@ Failures found during development were corrected, not suppressed:
 
 - Initial HUD build used an unsupported Godot theme property and a distance type shadowed by Node3D.Position; replaced with supported theme APIs and qualified simulation distance.
 - A rendered uphill trial initially failed its distance comparison: frame-level position sampling undercounted waypoint corners when multiple ticks ran per frame. Distance/arrival diagnostics now originate in fixed ticks; an extra one-second-frame regression protects this case.
+- Wine rendering lacked the triangle glyphs used on collapse buttons; changed them to plain +/- indicators for reliable legibility.
 - The first preservation-check script mishandled separator whitespace between unchanged methods; corrected the comparison. It was not a gameplay/test assertion failure.
 
 Windows extraction, exported execution, rendered input results and final ZIP hash are recorded below after packaging.
