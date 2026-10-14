@@ -2,7 +2,7 @@
 
 Windows-first Godot 4 .NET + deterministic/headless C# tactical simulation.
 [Master protocol](FANTASY_WARFARE_MASTER_PROTOCOL.md) and [AGENTS.md](AGENTS.md) govern scope.
-Gate 0 passed native Windows user acceptance. This Gate 1 build is ready for native Windows testing; later gameplay gates are not authorized.
+Gate 0 passed native Windows user acceptance. Gate 1 HUD/terrain corrections are ready for native Windows testing; Gate 1 remains open until acceptance; later gameplay gates are not authorized.
 
 ## Download and play — no tools to install
 
@@ -12,12 +12,14 @@ Windows 10/11 x64 and an OpenGL 3.3 graphics driver are required. The portable b
 
 The prior [Gate 0 package](https://github.com/kwgeologist/Fantasy-Warfare/blob/main/packages/Fantasy-Warfare-Gate0-Windows-x64.zip?raw=true) is retained. GitHub **Code → Download ZIP** downloads repository source, rather than just the runnable package.
 
+Run `Terrain-Trials.cmd` to watch seven reproducible open/forest/road/hill comparisons; Space starts each run. The compact bottom HUD keeps the center clear; selected details and help are collapsible.
+
 ## Working controls
 
 - Click selects a friendly; Shift-click toggles more; rectangle drag selects; Shift-drag adds; Tab selects all surviving friendlies.
 - Right-click terrain: coordinated group move with offsets and a common pace cap. Shift-right-click: append waypoints. Right-click a currently visible red formation: attack.
 - Space: pause/resume, with orders queued while paused. H: hold. X then right-click: controlled withdrawal. R: safe rally. Routing formations refuse move/attack until rallied.
-- 1 RTS / 2 free orbit / 3 overhead; WASD pans, wheel zooms, middle drag orbits/tilts in free mode. `-`/`=` changes speed from 0.5x to 4x. F1 hides/shows HUD. F9 restarts.
+- 1 RTS / 2 free orbit / 3 overhead; WASD pans, wheel zooms, middle drag orbits/tilts in free mode. `-`/`=` changes speed from 0.5x to 4x. F1 hides/shows HUD. F2 toggles help. F3 collapses selected details. F9 restarts.
 - Yellow disk: selection. Orange marker/line: current or pending destination/path. White pointer: facing. Yellow tracers: resolved ranged volleys. HUD tracks identities, strength, ammunition, morale/cohesion/fatigue, facing, orders and command failures.
 
 ## Implemented foundation
@@ -54,7 +56,7 @@ bash tools/export-windows.sh
 
 ## Evidence and practical limits
 
-44 simulation checks include all eight unchanged Gate 0 regressions. Reproducible scenarios exercise actual combat, fixed-seed/frame independence, hidden-state invariance and a commander changing from Exploit@1 to AvoidSpears@81 upon discovery of reserve 2. Original and Gate 1 Godot integration checks exercise real scene/input raycasts, group selection, pause/orders, fog picking and all cameras. See [Gate 1 validation](docs/GATE1_VALIDATION.md) for exact results, diagnosed failures and Windows package checks.
+55 simulation checks preserve all 44 previous tests, including all eight unchanged Gate 0 regressions. Reproducible scenarios exercise actual combat, fixed-seed/frame independence, hidden-state invariance and a commander changing from Exploit@1 to AvoidSpears@81 upon discovery of reserve 2. Original and Gate 1 Godot integration checks exercise real scene/input raycasts, group selection, pause/orders, fog picking and all cameras. See [HUD/terrain corrections and measured travel times](docs/GATE1_CORRECTIONS.md), and historical [Gate 1 validation](docs/GATE1_VALIDATION.md) for exact results, diagnosed failures and Windows package checks.
 
 This is a playable foundation, not a historically calibrated combat model or advanced adaptive-AI claim. Navigation uses a static 2m grid/circular footprints and simple local sidestepping; dense moving traffic can congest. Terrain/congestion can separate a group despite its pace cap. Shots are formation salvos with immediate casualty resolution and visual tracers, not ballistic projectiles. Facing changes are instantaneous. Faction contact sharing is immediate; spotting uses center eye height and forest depth, with no probabilistic detection/weather/night rules. Last-known contacts expire after 10 seconds and cannot be targeted as current enemies.
 

@@ -10,14 +10,18 @@ public partial class BattleView : Node3D
     private readonly FormationSelection selected = new();
     private readonly Dictionary<int,FormationVisual> visuals = new();
     private Camera3D camera = null!;
-    private Label status = null!, summary = null!;
-    private PanelContainer helpPanel = null!, statusPanel = null!;
+    private CompactHud hud = null!;
+    private readonly Dictionary<Position,TerrainKind> renderedTerrain = new();
     private SelectionOverlay selectionOverlay = null!;
     private int mode, eventCursor;
     private float yaw=0.65f, pitch=0.85f, distance=90, speed=1;
     private Vector3 focus=Vector3.Zero;
-    private bool legacySmoke, tacticalSmoke, drag, withdrawMode;
-    private Vector2 dragStart, dragEnd;
+    private bool legacySmoke, tacticalSmoke, correctionsSmoke, drag, withdrawMode;
+    private int trialIndex=-1;
+    private long trialStartTick;
+    private bool trialStarted,trialDemo,trialFinished;
+    private ArrayMesh terrainMesh=null!;
+        private Vector2 dragStart, dragEnd;
     private string message="Select a friendly formation, or Tab for all.";
     private int smokeStage, smokeFrames;
     private long pauseTick;
@@ -35,8 +39,12 @@ public partial class BattleView : Node3D
     {
         legacySmoke=OS.GetCmdlineUserArgs().Contains("--smoke");
         tacticalSmoke=OS.GetCmdlineUserArgs().Contains("--gate1-smoke");
-        battle=legacySmoke?new Battle(42):new Battle(Scenarios.Skirmish(),42);
-        if(legacySmoke||tacticalSmoke)
+        correctionsSmoke=OS.GetCmdlineUserArgs().Contains("--corrections-smoke");
+        trialDemo=OS.GetCmdlineUserArgs().Any(a=>a.StartsWith("--terrain-demo="));
+        var trialArg=OS.GetCmdlineUserArgs().FirstOrDefault(a=>a.StartsWith("--terrain-trial=")||a.StartsWith("--terrain-demo="));
+        if(trialArg is not null)trialIndex=int.Parse(trialArg.Split('=')[1]);
+        battle=trialIndex>=0?TerrainTrials.Create(TerrainTrials.Cases[trialIndex]):legacySmoke?new Battle(42):new Battle(Scenarios.Skirmish(),42);
+        if(legacySmoke||tacticalSmoke||correctionsSmoke||trialIndex>=0)
         {
             GetWindow().Size=new Vector2I(1280,720);
             GetWindow().ContentScaleSize=new Vector2I(1280,720);
@@ -50,12 +58,7 @@ public partial class BattleView : Node3D
         foreach(var f in battle.Formations) BuildFormation(f);
         camera=new Camera3D { Far=400,Current=true };AddChild(camera);UpdateCamera();
         var ui=new CanvasLayer();AddChild(ui);
-        helpPanel=new PanelContainer { Position=new(10,10) };ui.AddChild(helpPanel);
-        helpPanel.AddChild(new Label { Text="FANTASY WARFARE | Gate 1\nClick: select | Shift-click/drag: multi-select | Tab: all\nRight-click terrain: group move | Enemy: attack | Shift: queue\nSpace: pause | H: hold | X then right-click: withdraw | R: rally\n1 RTS / 2 Free / 3 Overhead | WASD pan | Wheel zoom | Middle orbit\n- / =: speed | F1: hide/show HUD | F9: restart" });
-        statusPanel=new PanelContainer();ui.AddChild(statusPanel);
-        var box=new VBoxContainer();statusPanel.AddChild(box);
-        summary=new Label();status=new Label();summary.AddThemeFontSizeOverride("font_size",14);status.AddThemeFontSizeOverride("font_size",13);
-        box.AddChild(summary);box.AddChild(status);
+        hud=new CompactHud();ui.AddChild(hud);hud.Build(KeyPress);
         selectionOverlay=new SelectionOverlay { MouseFilter=Control.MouseFilterEnum.Ignore };ui.AddChild(selectionOverlay);
         SyncPresentation();
         GD.Print($"Gate 1 scene ready: {battle.OwnFormations(1).Count()} friendly formations; shared simulation, terrain and faction visibility.");
@@ -68,18 +71,21 @@ public partial class BattleView : Node3D
         if(color.A<1) material.Transparency=BaseMaterial3D.TransparencyEnum.Alpha;
         var node=new MeshInstance3D { Mesh=mesh,Position=position,MaterialOverride=material };parent.AddChild(node);return node;
     }
+    private static Color TerrainColor(TerrainCell cell)=>cell.Kind switch { TerrainKind.Forest=>new Color("477348"),TerrainKind.Road=>new Color("b8a073"),TerrainKind.Rock=>new Color("696974"),_=>cell.Height>2000?new Color("8b8760"):cell.Height<-1000?new Color("56764d"):new Color("77935e") };
     private void BuildTerrain()
     {
         var surface=new SurfaceTool();surface.Begin(Mesh.PrimitiveType.Triangles);
-        void Vertex(int x,int z)
+        void Vertex(int x,int z,TerrainCell cell)
         {
-            var cell=battle.Map.Cell(new(x*1000,z*1000));
-            var color=cell.Kind switch { TerrainKind.Forest=>new Color("477348"),TerrainKind.Road=>new Color("b8a073"),TerrainKind.Rock=>new Color("696974"),_=>cell.Height>2000?new Color("8b8760"):cell.Height<-1000?new Color("56764d"):new Color("77935e") };
+            var color=TerrainColor(cell);
             surface.SetColor(color);surface.AddVertex(new(x,Height(x,z),z));
         }
         for(int x=-50;x<50;x+=2)for(int z=-50;z<50;z+=2)
-        { Vertex(x,z);Vertex(x+2,z);Vertex(x,z+2);Vertex(x+2,z);Vertex(x+2,z+2);Vertex(x,z+2); }
-        surface.GenerateNormals();var node=new MeshInstance3D { Mesh=surface.Commit(),MaterialOverride=new StandardMaterial3D { VertexColorUseAsAlbedo=true } };AddChild(node);node.CreateTrimeshCollision();
+        {
+            var center=new Position(x*1000+1000,z*1000+1000);var cell=battle.Map.Cell(center);renderedTerrain[center]=cell.Kind;
+            Vertex(x,z,cell);Vertex(x+2,z,cell);Vertex(x,z+2,cell);Vertex(x+2,z,cell);Vertex(x+2,z+2,cell);Vertex(x,z+2,cell);
+        }
+        surface.GenerateNormals();terrainMesh=surface.Commit();var node=new MeshInstance3D { Mesh=terrainMesh,MaterialOverride=new StandardMaterial3D { VertexColorUseAsAlbedo=true } };AddChild(node);node.CreateTrimeshCollision();
         for(int x=0;x<50;x++)for(int z=0;z<50;z++)
         {
             var p=TerrainMap.Center(x,z);var cell=battle.Map.Cell(p);
@@ -141,7 +147,9 @@ public partial class BattleView : Node3D
             if(key.Keycode==Key.H) Issue(OrderKind.Hold,default);
             if(key.Keycode==Key.R) Issue(OrderKind.Rally,default);
             if(key.Keycode==Key.X) { withdrawMode=true;message="Withdraw: right-click a safe terrain destination."; }
-            if(key.Keycode==Key.F1) { helpPanel.Visible=!helpPanel.Visible;statusPanel.Visible=helpPanel.Visible; }
+            if(key.Keycode==Key.F1) hud.Visible=!hud.Visible;
+            if(key.Keycode==Key.F2) hud.ToggleHelp();
+            if(key.Keycode==Key.F3) hud.ToggleDetails();
             if(key.Keycode==Key.F9) GetTree().ReloadCurrentScene();
             if(key.Keycode==Key.Equal) speed=Math.Min(4,speed*2);
             if(key.Keycode==Key.Minus) speed=Math.Max(0.5f,speed/2);
@@ -200,7 +208,7 @@ public partial class BattleView : Node3D
         }
         float x=0,z=0;if(Input.IsPhysicalKeyPressed(Key.A))x--;if(Input.IsPhysicalKeyPressed(Key.D))x++;if(Input.IsPhysicalKeyPressed(Key.W))z--;if(Input.IsPhysicalKeyPressed(Key.S))z++;
         focus+=new Vector3(x,0,z)*(float)delta*25;focus.X=Math.Clamp(focus.X,-48,48);focus.Z=Math.Clamp(focus.Z,-48,48);
-        UpdateCamera();SyncPresentation();if(legacySmoke) RunLegacySmoke();if(tacticalSmoke) RunTacticalSmoke();
+        UpdateCamera();SyncPresentation();if(legacySmoke) RunLegacySmoke();if(tacticalSmoke) RunTacticalSmoke();if(correctionsSmoke) RunCorrectionsSmoke();if(trialIndex>=0) RunTerrainTrial();
     }
     private void SyncPresentation()
     {
@@ -232,11 +240,9 @@ public partial class BattleView : Node3D
                 GetTree().CreateTimer(0.3).Timeout+=()=> { if(GodotObject.IsInstanceValid(tracer))tracer.QueueFree(); };
             }
         }
-        summary.Text=$"{battle.Outcome??(battle.Paused?"PAUSED":"RUNNING")} | {speed:0.0}x | Tick {battle.Tick} | {new[]{"RTS","Free","Overhead"}[mode]}\nSelected {string.Join(",",selected.Ids)} | Visible enemies {battle.Perception(1).Visible.Count} | Pending {battle.PendingOrders.Count(o=>o.Faction==1)}\n{message}";
-        status.Text=string.Join("\n",battle.OwnFormations(1).Select(f=>$"{f.Id} {f.Kind,-8} {f.Strength,2}/{f.InitialStrength} | Ammo {f.Ammunition,2} | M {f.Morale/10,3} C {f.Cohesion/10,3} F {f.Fatigue/10,3} | Face {f.Facing/10,3} | {f.Status} | {f.CurrentOrder?.Kind.ToString()??"Hold"}: {f.CommandStatus}"));
-        if(battle.Outcome is not null) status.Text+="\nAI after-action: "+string.Join(" | ",battle.Decisions.TakeLast(4).Select(d=>$"{d.Tick}:{d.Plan}"));
-        statusPanel.Position=new(10,Math.Max(160,GetViewport().GetVisibleRect().Size.Y-230));
+        hud.Update(battle,selected.Ids,speed,mode,message,GetViewport().GetVisibleRect().Size);
     }
+
     private void Assert(bool condition,string name) { if(!condition)throw new Exception(name); }
     private void KeyPress(Key key)=>_UnhandledInput(new InputEventKey { Keycode=key,Pressed=true });
     private void Click(MouseButton button,Vector3 point,bool shift=false)
@@ -304,4 +310,81 @@ public partial class BattleView : Node3D
             }
         }catch(Exception e){SmokeFail(e);}
     }
+    private void RunCorrectionsSmoke()
+    {
+        try
+        {
+            if(++smokeFrames>180)throw new Exception("corrections smoke timeout");
+            switch(smokeStage++)
+            {
+                case 0: return;
+                case 1:
+                    var colors=terrainMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Color].AsColorArray();
+                    int cellIndex=0;
+                    for(int x=0;x<50;x++)for(int z=0;z<50;z++)
+                    {
+                        var expected=TerrainColor(battle.Map.Cell(TerrainMap.Center(x,z)));
+                        for(int vertex=0;vertex<6;vertex++)Assert(colors[cellIndex*6+vertex].IsEqualApprox(expected),"rendered per-cell mesh colour mismatch");
+                        cellIndex++;
+                    }
+                    Assert(renderedTerrain.Count==2500&&renderedTerrain.All(kv=>battle.Map.Cell(kv.Key).Kind==kv.Value),"rendered terrain classifications");
+                    foreach(var trial in TerrainTrials.Cases)
+                    {
+                        foreach(var point in new[]{trial.Start,trial.Target})
+                        {
+                            var world=World(point);var from=world+Vector3.Up*20;
+                            var hit=GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from,world-Vector3.Up*20,1));
+                            Assert(hit.Count>0&&Math.Abs(hit["position"].AsVector3().Y-world.Y)<0.002f,"terrain collision/simulation height agreement");
+                        }
+                    }
+                    Assert(!hud.Details.Visible&&!hud.Help.Visible,"secondary panels default hidden");
+                    Assert(hud.Bar.Size.Y<=80&&hud.Bar.Position.Y>=620,"compact bottom HUD");
+                    Assert(!hud.Bar.GetGlobalRect().HasPoint(new(640,360)),"center covered by persistent HUD");
+                    Click(MouseButton.Left,World(battle.GetFormation(3).Position,1));SyncPresentation();Assert(hud.Details.Visible,"selected details missing");
+                    KeyPress(Key.F3);SyncPresentation();Assert(!hud.Details.Visible,"details collapse");KeyPress(Key.F3);
+                    KeyPress(Key.F2);Assert(hud.Help.Visible,"help toggle");KeyPress(Key.F2);
+                    KeyPress(Key.F1);Assert(!hud.Visible,"HUD hide");KeyPress(Key.F1);
+                    Assert(hud.PauseButton.FocusMode==Control.FocusModeEnum.None&&hud.HoldButton.FocusMode==Control.FocusModeEnum.None,"buttons steal camera hotkeys");
+                    hud.PauseButton.EmitSignal(Button.SignalName.Pressed);Assert(battle.Paused,"HUD pause command");pauseTick=battle.Tick;
+                    Click(MouseButton.Right,World(new(-32000,-9000)));Assert(battle.PendingOrders.Any(o=>o.Faction==1),"selected terrain order with compact HUD");CheckCameras();break;
+                case 2:
+                    Assert(battle.Tick==pauseTick,"HUD tactical pause freeze");hud.PauseButton.EmitSignal(Button.SignalName.Pressed);break;
+                case 3:
+                    if(battle.Tick<=pauseTick){smokeStage--;return;}
+                    Assert(battle.PendingOrders.All(o=>o.Faction!=1),"HUD resume order delivery");hud.HoldButton.EmitSignal(Button.SignalName.Pressed);break;
+                case 4:
+                    if(battle.PendingOrders.Any(o=>o.Faction==1)){smokeStage--;return;}
+                    Assert(battle.GetFormation(3).CurrentOrder?.Kind==OrderKind.Hold,"HUD hold button");
+                    GD.Print("PASS Corrections Godot integration: compact HUD, selected details/collapse/help, selection/order/cameras/pause/buttons, 2500 rendered terrain classes, collision heights");GetTree().Quit(0);break;
+            }
+        }catch(Exception e){SmokeFail(e);}
+    }
+    private void RunTerrainTrial()
+    {
+        try
+        {
+            if(trialFinished)return;
+            var trial=TerrainTrials.Cases[trialIndex];
+            if(!trialStarted)
+            {
+                // Run through the playable input adapter, rendered map, ordinary _Process and authoritative ticks.
+                if(++smokeFrames<3)return;
+                KeyPress(Key.Space);selected.Select(1,battle.OwnFormations(1));
+                focus=World(trial.Start);KeyPress(Key.Key3);SyncPresentation();
+                Click(MouseButton.Right,World(trial.Target));
+                Assert(battle.PendingOrders.Count==1,"terrain trial right-click order");
+                trialStartTick=battle.Tick;trialStarted=true;message=trialDemo?$"{trial.Name}: Space starts the measured run.":trial.Name;
+                if(!trialDemo)KeyPress(Key.Space);return;
+            }
+            if(battle.Tick>2100)throw new Exception("playable terrain trial timeout");
+            if(battle.Formation.Destination is not null||battle.PendingOrders.Count>0)return;
+            Assert(FantasyWarfare.Simulation.Position.Distance(battle.Formation.Position,trial.Target)<=10,"terrain click target mismatch");
+            var result=new TerrainTrials.Result(trial.Name,trial.Kind,battle.Formation.LastArrivalTick-trialStartTick,(int)battle.Formation.DistanceTravelled,battle.Map.Height(battle.Formation.Position)-battle.Map.Height(trial.Start),battle.Formation.LastArrivalFatigue);
+            // Exclude startup ticks before the player order.
+            var reference=TerrainTrials.Run(trial);Assert(result==reference,"playable/frame movement differs from simulation trial");
+            GD.Print($"MEASURE playable {result}");GD.Print("PASS Playable terrain trial: "+trial.Name);
+            if(trialDemo){trialFinished=true;battle.SetPaused(true);message=result.ToString()+" | F9 repeats";}else GetTree().Quit(0);
+        }catch(Exception e){SmokeFail(e);}
+    }
+
 }

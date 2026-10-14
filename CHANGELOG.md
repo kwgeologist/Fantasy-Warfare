@@ -1,5 +1,14 @@
 # Changelog
 
+## Gate 1 corrections — 2026-10-14
+
+- Replace large persistent panels with a compact bottom command/status bar, selected-only scrollable details and collapsible help; retain all controls/cameras.
+- Align cell colours and triangular collision/render heights with simulation terrain.
+- Apply forward terrain costs to clear-path routing and smoothing; add grade/class speed penalties and uphill fatigue.
+- Add measured playable-map open/forest/road/uphill trials, visible Windows trial launcher and frame-independent arrival diagnostics.
+- Preserve all 44 prior tests and both original engine suites; add 11 regressions and HUD/render/travel integration.
+- Deliver updated self-contained Windows package. Gate 1 stays open for native HUD/terrain acceptance; no Gate 2 or troop model changes.
+
 ## Gate 0 foundation — 2026-10-13
 
 - Preserve the supplied master protocol and agent requirements.

@@ -8,3 +8,7 @@ dotnet run --project tests/Simulation.Tests --no-restore
 "${GODOT:-godot}" --headless --editor --path game --import
 "${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --smoke
 "${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --gate1-smoke
+"${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --corrections-smoke
+for trial in {0..6}; do
+  "${GODOT:-godot}" --headless --path game --fixed-fps 20 -- --terrain-trial="$trial"
+done

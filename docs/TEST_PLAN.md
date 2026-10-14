@@ -1,6 +1,6 @@
 # Gate 1 test plan
 
-`dotnet run --project tests/Simulation.Tests` is the real assertion runner, with nonzero exit for any failed assertion. It executes 44 tests: all 8 Gate 0 regressions plus 36 tactical checks. `dotnet test` is not the runner. `bash tools/verify.sh` performs frozen restores, build, all tests, editor import, original engine regression and Gate 1 engine integration.
+`dotnet run --project tests/Simulation.Tests` is the real assertion runner, with nonzero exit for any failed assertion. It executes 55 tests: all 44 preserved Gate 0/Gate 1 checks plus 11 corrections regressions. `dotnet test` is not the runner. `bash tools/verify.sh` performs frozen restores, build, all tests, editor import, both original engine suites, corrections HUD/render integration and seven playable movement trials.
 
 ## Preserved Gate 0 coverage
 
@@ -26,3 +26,7 @@ Extract the executable ZIP and run `Verify-Gate1.cmd /nopause`: the game's exact
 On Windows: verify all selection modes, group offsets, live replacements, paused queues, all camera modes and speed controls. Move onto roads/woods/slopes, around rock and into congested passages. Attack only visible enemies; watch volleys, ammunition, casualties, fatigue/cohesion/morale, withdrawal/rout/rally and victory. Confirm concealed enemies cannot be selected/attacked. Restart for repeatability. Report Windows version, GPU/driver, failing step and engine/smoke logs. Do not begin the next gameplay gate until these controls and mechanics have user acceptance.
 
 See [validation evidence and diagnosed failures](GATE1_VALIDATION.md). Tests prove implemented mechanics/scenarios, not historical calibration, general AI superiority or large-army performance.
+
+## HUD and terrain correction acceptance
+
+Run `--corrections-smoke` for actual mesh per-cell colour/collision agreement, compact edge HUD, selected-only details/collapse/help, button focus/actions, selection/order/pause/camera behavior. Run `--terrain-trial=0` through `6` with fixed-fps 20 for measured playable-map runs; compare exact arrival tick, distance and fatigue to shared-library reference results. `Terrain-Trials.cmd` exposes visible paused-start fixtures for native acceptance; keep orders unchanged during comparisons. Long-render-frame diagnostics are tested separately. See [correction results](GATE1_CORRECTIONS.md) for coordinates, times, failures and pending Windows acceptance.
