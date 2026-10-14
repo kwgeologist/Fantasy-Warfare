@@ -11,4 +11,5 @@ Test("paused replacement and waypoint queue", () => { var b=new Battle(); b.SetP
 Test("seed and scheduled inputs independent of frame partition", () => { Battle Run(int[] frames) { var b=new Battle(42); b.IssueMove(new(10000,10000),deliveryTick:1); b.IssueMove(new(-15000,12000),deliveryTick:50); foreach(var ms in frames) b.Advance(TimeSpan.FromMilliseconds(ms)); return b; } var a=Run(Enumerable.Repeat(10,1000).ToArray()); var c=Run(Enumerable.Repeat(125,80).ToArray()); Check(a.Seed==c.Seed && a.Tick==c.Tick && a.Formation.Position==c.Formation.Position && a.Formation.Destination==c.Formation.Destination,"frame dependence"); });
 Test("invalid commands rejected", () => { var b=new Battle(); bool rejected=false; try { b.IssueMove(new(49000,0)); } catch(ArgumentOutOfRangeException) { rejected=true; } Check(rejected,"bounds"); });
 Test("terrain includes ridge and valley", () => { Check(Terrain.Height(12,0)>6,"ridge"); Check(Terrain.Height(-10,22)<-3,"valley"); });
+Gate1Tests.Run(Test, Check);
 Console.WriteLine($"{passed} passed, {failed} failed"); return failed==0 ? 0 : 1;

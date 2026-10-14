@@ -3,7 +3,7 @@
 Read `FANTASY_WARFARE_MASTER_PROTOCOL.md` (or `docs/MASTER_PROTOCOL.md` if the repo relocates it) before writing code. It is the authoritative product/design specification. Where implementation detail is unspecified, make a conservative, documented decision that protects the tactical simulation.
 
 ## Mission
-Build a Windows-first, standalone fantasy warfare game supporting real-time pausable tactical battles and eventually full military campaigns and tabletop RPG interoperability. The defining advantage is fair, adaptive, non-omniscient tactical/strategic AI. **Currently implement Gate 0 only.**
+Build a Windows-first, standalone fantasy warfare game supporting real-time pausable tactical battles and eventually full military campaigns and tabletop RPG interoperability. The defining advantage is fair, adaptive, non-omniscient tactical/strategic AI. **Current authorization: Gate 1 tactical warfare foundation. Gate 0 passed native Windows user acceptance.**
 
 ## Binding constraints
 - Godot 4 .NET + C#, independent deterministic/headless C# simulation library.
@@ -31,5 +31,5 @@ Build a Windows-first, standalone fantasy warfare game supporting real-time paus
 9. Update README, architecture notes, roadmap, changelog and test plan when appropriate.
 10. End each task with concrete status, run instructions, known limitations and the smallest next useful increment.
 
-## Immediate work (Gate 0)
-Initialize the project and implement a minimal 3D plain/ridge/woods/valley scene, switchable RTS/free/overhead cameras, one selectable formation and move orders, orders during play, tactical pause/queue-and-resume, headless fixed-tick C# simulation and tests, plus clear launch instructions. Do not attempt later features yet.
+## Previous foundation (Gate 0)
+Initialize the project and implement a minimal 3D plain/ridge/woods/valley scene, switchable RTS/free/overhead cameras, one selectable formation and move orders, orders during play, tactical pause/queue-and-resume, headless fixed-tick C# simulation and tests, plus clear launch instructions. Preserve these controls and every Gate 0 regression test. Gate 1 is now authorized by the user; campaign, magic, siege, AI map reconstruction and dungeons remain out of scope.
