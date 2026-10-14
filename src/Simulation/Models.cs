@@ -56,7 +56,11 @@ public sealed class Formation
     internal int BlockedTicks;
     internal long LastCombatTick=-10000, LastShotTick=-10000;
     internal bool MovedThisTick, EngagedThisTick;
-    internal int GroupSpeed;
+    internal int GroupSpeed, UphillEffort;
+    public long DistanceTravelled { get; internal set; }
+    public long LastArrivalTick { get; internal set; }
+    public int LastArrivalFatigue { get; internal set; }
+    public int MovementSpeed { get; internal set; } // Actual horizontal millimetres per second, last fixed tick.
     internal Formation(FormationSpec s,UnitDefinition? definition=null)
     {
         Id=s.Id; Faction=s.Faction; Definition=definition??UnitDefinition.For(s.Kind); Position=s.Position;

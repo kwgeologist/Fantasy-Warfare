@@ -91,7 +91,7 @@ public sealed partial class Battle
         pending.RemoveAll(o=>o.DeliveryTick<=Tick);
         UpdatePerceptions();
         if(Scenario.Commander && Tick%20==1) RunCommander();
-        foreach(var f in formations) { f.MovedThisTick=false;f.EngagedThisTick=false;if(f.Active) Move(f); }
+        foreach(var f in formations) { f.MovedThisTick=false;f.EngagedThisTick=false;f.UphillEffort=0;f.MovementSpeed=0;if(f.Active) Move(f); }
         UpdatePerceptions();
         if(Scenario.Combat) ResolveCombat();
         if(Scenario.Morale) UpdateMorale();
@@ -166,11 +166,14 @@ public sealed partial class Battle
             else return;
         }
         if(!Map.SegmentClear(f.Position,next,legacy?0:f.Definition.Radius)) { f.CommandStatus="Route blocked";return; }
+        f.UphillEffort=Math.Max(0,Map.GradePermille(f.Position,next)+199)/200;
+        f.DistanceTravelled+=Position.Distance(f.Position,next);
+        f.MovementSpeed=Position.Distance(f.Position,next)*20;
         f.BlockedTicks=0;f.Facing=FacingTo(f.Position,waypoint);f.MovedThisTick=next!=f.Position;f.Position=next;
         if(next==waypoint)
         {
             f.Route.Dequeue();
-            if(f.Route.Count==0) { f.Destination=null;f.CommandStatus="Arrived";if(f.Status==FormationStatus.Withdrawing) f.Status=FormationStatus.Ready; }
+            if(f.Route.Count==0) { f.Destination=null;f.LastArrivalTick=Tick;f.CommandStatus="Arrived";if(f.Status==FormationStatus.Withdrawing) f.Status=FormationStatus.Ready; }
         }
     }
     public static int FacingTo(Position a,Position b)=>((int)Math.Round(Math.Atan2(b.X-a.X,-(b.Z-a.Z))*1800/Math.PI)+3600)%3600;

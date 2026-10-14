@@ -12,4 +12,5 @@ Test("seed and scheduled inputs independent of frame partition", () => { Battle 
 Test("invalid commands rejected", () => { var b=new Battle(); bool rejected=false; try { b.IssueMove(new(49000,0)); } catch(ArgumentOutOfRangeException) { rejected=true; } Check(rejected,"bounds"); });
 Test("terrain includes ridge and valley", () => { Check(Terrain.Height(12,0)>6,"ridge"); Check(Terrain.Height(-10,22)<-3,"valley"); });
 Gate1Tests.Run(Test, Check);
+CorrectionsTests.Run(Test, Check);
 Console.WriteLine($"{passed} passed, {failed} failed"); return failed==0 ? 0 : 1;

@@ -64,9 +64,10 @@ public sealed partial class Battle
         foreach(var f in formations.Where(f=>f.Active))
         {
             bool woods=Map.Cell(f.Position).Kind==TerrainKind.Forest;
-            if(f.MovedThisTick) { f.Fatigue=Math.Min(1000,f.Fatigue+(woods?2:1));if(woods) f.Cohesion=Math.Max(0,f.Cohesion-1); }
+            if(f.MovedThisTick) { f.Fatigue=Math.Min(1000,f.Fatigue+(woods?2:1)+f.UphillEffort);if(woods) f.Cohesion=Math.Max(0,f.Cohesion-1); }
             else if(f.EngagedThisTick) f.Fatigue=Math.Min(1000,f.Fatigue+2);
             else { f.Fatigue=Math.Max(0,f.Fatigue-2);f.Cohesion=Math.Min(1000,f.Cohesion+1); }
+            if(f.LastArrivalTick==Tick)f.LastArrivalFatigue=f.Fatigue;
             if(Tick%20==0)
             {
                 var nearby=perceptions[f.Faction].Visible.Where(e=>Position.Distance(e.Position,f.Position)<12000).ToArray();
