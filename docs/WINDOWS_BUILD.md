@@ -1,3 +1,5 @@
+> Historical Gate 0 packaging record. The user subsequently confirmed native Windows Gate 0 acceptance. Current Gate 1 package/results are in [GATE1_VALIDATION.md](GATE1_VALIDATION.md).
+
 # Gate 0 self-contained Windows x64 package
 
 ## Player download and launch

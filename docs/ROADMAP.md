@@ -1,7 +1,9 @@
 # Roadmap
 
-Current implementation: Gate 0 only. Foundation comprises one formation, fixed-tick orders and pause, shared 3D terrain, three cameras, independent mechanic tests and engine integration validation.
+Gate 0: native Windows user acceptance passed (user-confirmed controls, terrain, movement, pause and all cameras).
 
-Before accepting Gate 0 on the target platform: open and play on Windows Godot 4.6.3 .NET, check controls in all views, and confirm the documented .NET toolchain. A self-contained Windows x64 ZIP is now provided and tested under Wine. Linux/Wine engine and rendered validation does not replace native Windows/GPU acceptance.
+Gate 1: implemented tactical foundation and Windows package, with 44 simulation tests and both engine integration suites. Reproducible seeded combat and unexpected-reserve replanning are required evidence, not a compile-only milestone. Current delivery still needs native Windows acceptance of new selection/groups, terrain consequences, combat and AI behavior.
 
-Smallest next useful increment: Windows acceptance and any Gate 0 usability fixes. After explicit authorization for Gate 1, introduce a small multi-formation tactical scenario and test a single simulation-owned mechanic at a time. Gate 1 then grows combat, terrain consequences, perception, fair basic AI and victory conditions. Refer to the master protocol for later gates; no later features are scaffolded now.
+Smallest next increment: address issues from Gate 1 Windows acceptance, especially moving-formation congestion, control clarity and combat balance. Only then plan stronger scouting/intelligence/AI benchmark work from the master protocol. Do not automatically start another gate.
+
+Campaign, magic, siege, multiplayer, AI map reconstruction and dungeons are not part of this assignment. No speculative modules have been introduced for them. Large-army performance remains a future benchmarked goal.

@@ -1,26 +1,28 @@
-# Gate 0 test plan
+# Gate 1 test plan
 
-## Automated checks
+`dotnet run --project tests/Simulation.Tests` is the real assertion runner, with nonzero exit for any failed assertion. It executes 44 tests: all 8 Gate 0 regressions plus 36 tactical checks. `dotnet test` is not the runner. `bash tools/verify.sh` performs frozen restores, build, all tests, editor import, original engine regression and Gate 1 engine integration.
 
-From the repository root with .NET 8.0.426 and Godot 4.6.3 .NET:
+## Preserved Gate 0 coverage
+
+Original fixed clock/remainder, arrival/no drift, live destination replacement, pause/order timing, paused replacement/waypoints, seeded frame partition, target rejection, ridge/valley checks remain in `Program.cs`. No assertions were deleted or relaxed. Gate 1 checks are called separately from `Gate1Tests.cs`. The original Godot click/move/reissue/pause/camera assertions remain executable with `--smoke`.
+
+## Tactical checks
+
+Six-per-side identity/four classes; ownership-safe click/toggle/rectangle selection; group offsets/pace and pause receipt; atomic errors; road/open/forest/cavalry speeds; slopes; detour footprint safety; narrow gap rejection; ridge/forest LOS; concealed attack rejection; simultaneous melee and morale; ranged ammo/casualties; range/LOS rejection; ammo exhaustion; firing discovery; spear/front/rear power; fatigue recovery; forest cohesion; withdrawal vs rout; routing contagion and safe rally; unsafe rally rejection; planner API/no-live-state boundary; hidden-state decision invariance; spear avoidance; archer protection/screens; unexpected reserve discovery and received changed order; stale contact integrity; complete seeded/frame-independent combat/event/decision traces; forest melee contact; flank morale; real default skirmish combat; versioned scenario roster/weapons; invalid data; commander ammo limit; victory and rejected post-victory orders.
+
+## Engine checks
 
 ```bash
-dotnet build game/FantasyWarfare.csproj
-dotnet run --project tests/Simulation.Tests
-"$GODOT" --headless --editor --path game --import
 "$GODOT" --headless --path game --fixed-fps 20 -- --smoke
+"$GODOT" --headless --path game --fixed-fps 20 -- --gate1-smoke
 ```
 
-`bash tools/verify.sh` performs the same validation with frozen dependency restore. Eight simulation tests cover fixed clock/remainder, exact arrival/no drift, live replacement, pause/receipt timing, paused replacement plus appended waypoint, seeded scheduled-input equality across different frame partitions, target rejection, and ridge/valley heights. Failures produce nonzero exit status. The engine check invokes the real input adapter with projected coordinates and uses actual physics raycasts; it asserts selection, terrain targeting, live movement/reissue, pause freeze, pending commands/resumption, projection changes, free orbit and wheel zoom. It is bounded to 120 frames and cannot pass merely because the scene opened.
+The tactical check uses actual projected coordinates, physics raycasts and input adapters. It asserts 12 formations, click/shift/drag box selection, offset group movement/reissue, paused queue/resume, hold/withdraw/rally and select-all, hidden enemy mesh/picking suppression, and RTS/free/overhead/orbit/zoom. It is bounded to 180 frames, while the original regression is bounded to 120. It cannot pass merely because a window exists.
 
-## Manual target-platform acceptance
+## Windows package and manual acceptance
 
-On Windows: run the README commands and open `project.godot`. Verify plain/ridge/woods/valley visibility, select formation, order onto each terrain type, observe exact stop, replace a destination while moving, pause and replace/append commands, wait, resume and follow the queue. Use all three views and test orbit/tilt/pan/zoom, including while paused. Confirm no decorative combat controls exist. Terrain consequence mechanics are deliberately absent.
+Extract the executable ZIP and run `Verify-Gate1.cmd /nopause`: the game's exact Simulation.dll and shared bundled runtime are tested; both engine suites run using the exported Windows binary, with fresh-log PASS markers and exit-code checks. Manifest hashes and ZIP CRC are checked during packaging, then hashes checked after fresh extraction. Wine execution is compatibility-layer validation; native Windows/GPU acceptance remains pending for Gate 1.
 
-## Current evidence
+On Windows: verify all selection modes, group offsets, live replacements, paused queues, all camera modes and speed controls. Move onto roads/woods/slopes, around rock and into congested passages. Attack only visible enemies; watch volleys, ammunition, casualties, fatigue/cohesion/morale, withdrawal/rout/rally and victory. Confirm concealed enemies cannot be selected/attacked. Restart for repeatability. Report Windows version, GPU/driver, failing step and engine/smoke logs. Do not begin the next gameplay gate until these controls and mechanics have user acceptance.
 
-Linux .NET build and the eight core tests passed during implementation. Godot .NET editor import and headless integration passed. A rendered RTS scene was inspected on a local dummy X display with Mesa llvmpipe; screenshot: `/workspace/gate0-rts.png`. Headless tests do not validate pixels. Windows runtime and Windows export were not run. See `VALIDATION.md` for final commands/results and setup diagnostics.
-
-## Self-contained Windows package
-
-[Windows packaging validation](WINDOWS_BUILD.md) records the subsequent export and compatibility-layer checks. `Verify-Gate0.cmd /nopause` inside the extracted package runs the unchanged eight-test harness against the **game's** Simulation.dll and shared bundled .NET runtime, followed by the exported Windows game's headless integration assertions. It requires no Godot/.NET installation and returns nonzero for either test failure or a missing current-run PASS marker. Native Windows manual acceptance is still required.
+See [validation evidence and diagnosed failures](GATE1_VALIDATION.md). Tests prove implemented mechanics/scenarios, not historical calibration, general AI superiority or large-army performance.

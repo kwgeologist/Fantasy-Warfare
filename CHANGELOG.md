@@ -17,3 +17,14 @@
 - Package the original tests beside the game's exact Simulation.dll and shared self-contained runtime.
 - Verify the Windows export's eight tests and headless engine checks under Wine, plus rendered selection, pause/resume/movement and camera input.
 - Preserve all gameplay, simulation and automated-test source. Native Windows/GPU acceptance remains pending; Gate 1 is not started.
+
+## Gate 1 tactical warfare foundation
+
+- Record user-confirmed native Windows Gate 0 acceptance and authorize Gate 1 scope.
+- Extend the shared simulation with multiple identified formations, four unit/weapon classes, ID selection, group orders and versioned scenario data.
+- Add terrain speed/LOS, footprint-aware static pathfinding and local formation contact handling.
+- Add seeded simultaneous melee/ranged casualties, ammo, fatigue/cohesion/morale, flank/rout pressure, controlled withdrawal, rally and defeat victory.
+- Add a knowledge-snapshot-only commander, observation aging/fire/contact discovery, support/threat assessment, spear avoidance, archer screening and actual reserve-discovery replanning.
+- Preserve all eight Gate 0 tests; add 36 tactical tests, both original and tactical engine integration checks, and rendered input evidence.
+- Update self-contained Windows packaging and verification while retaining the prior Gate 0 downloadable ZIP.
+- Document failed checks/corrections and practical limits; native Gate 1 Windows acceptance is pending.

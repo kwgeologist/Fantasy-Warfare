@@ -1,11 +1,11 @@
-# Gate 0 Windows player package
+# Windows player packages
 
-[Download Fantasy-Warfare-Gate0-Windows-x64.zip](https://github.com/kwgeologist/Fantasy-Warfare/blob/main/packages/Fantasy-Warfare-Gate0-Windows-x64.zip?raw=true).
+[Download Gate 1 tactical foundation — Windows x64](https://github.com/kwgeologist/Fantasy-Warfare/blob/main/packages/Fantasy-Warfare-Gate1-Windows-x64.zip?raw=true).
 
-Extract **all** files and double-click `FantasyWarfare.exe`. No Godot, .NET SDK or separate runtime installation is required. This is the executable package, distinct from GitHub's source archive.
+Extract **all** files, then double-click `FantasyWarfare.exe`. No Godot, .NET SDK or separate runtime installation is required. Run `Verify-Gate1.cmd` for the preserved and new automated checks. Windows 10/11 x64 / OpenGL 3.3 are required; the build is unsigned. Native Gate 1 acceptance remains pending.
 
-Windows 10/11 x64 and OpenGL 3.3 graphics drivers are required. This unsigned build passed its core/integration tests under Wine; native Windows/GPU acceptance is pending. Read the included `README-WINDOWS.txt`; optional `Verify-Gate0.cmd` runs the preserved automated tests without development tools.
+[Prior Gate 0 package](https://github.com/kwgeologist/Fantasy-Warfare/blob/main/packages/Fantasy-Warfare-Gate0-Windows-x64.zip?raw=true) is retained and passed native Windows user acceptance. GitHub's source ZIP is different from these executable ZIPs.
 
-The SHA-256 checksum is in the adjacent `.sha256` file. PowerShell verification: `Get-FileHash .\Fantasy-Warfare-Gate0-Windows-x64.zip -Algorithm SHA256`.
+Adjacent `.sha256` files provide checksums; PowerShell: `Get-FileHash .\Fantasy-Warfare-Gate1-Windows-x64.zip -Algorithm SHA256`.
 
-See [validation/build notes](../docs/WINDOWS_BUILD.md) and `tools/export-windows.sh` for reproduction. Gameplay and original tests remain at Gate 0. No Gate 1 features are included.
+[Gate 1 results/limitations](../docs/GATE1_VALIDATION.md) · [Architecture](../docs/ARCHITECTURE.md) · [Rebuild instructions](../README.md).
