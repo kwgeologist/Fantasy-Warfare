@@ -4,7 +4,13 @@ Windows-first Godot 4 .NET / C# tactical foundation. The supplied
 [FANTASY_WARFARE_MASTER_PROTOCOL.md](FANTASY_WARFARE_MASTER_PROTOCOL.md) and
 [AGENTS.md](AGENTS.md) are authoritative. Gate 0 only is implemented.
 
-## Windows launch
+## Windows player package (no tools to install)
+
+Download [Fantasy-Warfare-Gate0-Windows-x64.zip](https://github.com/kwgeologist/Fantasy-Warfare/blob/main/packages/Fantasy-Warfare-Gate0-Windows-x64.zip?raw=true), extract the entire ZIP, and double-click **FantasyWarfare.exe**. Keep the `.pck` and `data_FantasyWarfare_windows_x86_64` folder alongside it. This contains the engine and .NET runtime; Godot and the .NET SDK are only needed to develop/rebuild the project.
+
+Windows 10/11 x64 with an OpenGL 3.3 graphics driver is required. See the included `README-WINDOWS.txt` and [Windows build notes](docs/WINDOWS_BUILD.md). The exact exported Windows executable passed core/integration and rendered input checks under Wine; native Windows/GPU acceptance remains pending. No new gameplay is included.
+
+## Windows developer launch
 
 1. Install **.NET SDK 8.0.426** and **Godot 4.6.3 .NET** (the standard Godot download cannot run C#).
 2. From this repository root, run:
@@ -51,7 +57,7 @@ One authoritative formation with 24 placeholder troop visuals moves across a 100
 
 ## Scope and validation limits
 
-This is a foundation, not combat gameplay. No enemy AI, combat, morale, terrain speed/LOS effects, obstacle avoidance, campaign, magic, multiplayer, map import, or dungeon modules are implemented. Woods are traversable visual terrain; orders follow straight paths. Formation footprint is visual and does not enforce collision. Seed is retained for reproducible scenario identity; Gate 0 has no random mechanic. Cross-platform bitwise replay and large-army performance are not claimed. No Windows export package is produced yet.
+This is a foundation, not combat gameplay. No enemy AI, combat, morale, terrain speed/LOS effects, obstacle avoidance, campaign, magic, multiplayer, map import, or dungeon modules are implemented. Woods are traversable visual terrain; orders follow straight paths. Formation footprint is visual and does not enforce collision. Seed is retained for reproducible scenario identity; Gate 0 has no random mechanic. Cross-platform bitwise replay and large-army performance are not claimed. A self-contained Windows x64 player package is now provided; native Windows acceptance remains pending.
 
 See [test plan](docs/TEST_PLAN.md), [architecture](docs/ARCHITECTURE.md),
 [data contracts](docs/DATA_CONTRACTS.md), [roadmap](docs/ROADMAP.md), and

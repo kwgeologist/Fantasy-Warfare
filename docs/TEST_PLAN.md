@@ -20,3 +20,7 @@ On Windows: run the README commands and open `project.godot`. Verify plain/ridge
 ## Current evidence
 
 Linux .NET build and the eight core tests passed during implementation. Godot .NET editor import and headless integration passed. A rendered RTS scene was inspected on a local dummy X display with Mesa llvmpipe; screenshot: `/workspace/gate0-rts.png`. Headless tests do not validate pixels. Windows runtime and Windows export were not run. See `VALIDATION.md` for final commands/results and setup diagnostics.
+
+## Self-contained Windows package
+
+[Windows packaging validation](WINDOWS_BUILD.md) records the subsequent export and compatibility-layer checks. `Verify-Gate0.cmd /nopause` inside the extracted package runs the unchanged eight-test harness against the **game's** Simulation.dll and shared bundled .NET runtime, followed by the exported Windows game's headless integration assertions. It requires no Godot/.NET installation and returns nonzero for either test failure or a missing current-run PASS marker. Native Windows manual acceptance is still required.

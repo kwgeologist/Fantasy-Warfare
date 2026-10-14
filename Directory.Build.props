@@ -1,0 +1,7 @@
+<Project>
+  <!-- Keep export/RID restores separate from the existing editor/test lockfiles. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'ExportRelease' Or '$(Configuration)' == 'ExportDebug'">
+    <NuGetLockFilePath>$(MSBuildProjectDirectory)/obj/$(Configuration)/packages.lock.json</NuGetLockFilePath>
+    <RuntimeFrameworkVersion>8.0.32</RuntimeFrameworkVersion>
+  </PropertyGroup>
+</Project>
