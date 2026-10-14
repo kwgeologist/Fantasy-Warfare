@@ -1,0 +1,185 @@
+/tmp/godot-mono-templates.tpz: OK
+Archive:  /tmp/godot-mono-templates.tpz
+ extracting: /workspace/toolchains/godot-data/godot/export_templates/4.6.3.stable.mono/version.txt  
+  inflating: /workspace/toolchains/godot-data/godot/export_templates/4.6.3.stable.mono/windows_debug_x86_64_console.exe  
+  inflating: /workspace/toolchains/godot-data/godot/export_templates/4.6.3.stable.mono/windows_debug_x86_64.exe  
+  inflating: /workspace/toolchains/godot-data/godot/export_templates/4.6.3.stable.mono/windows_release_x86_64_console.exe  
+  inflating: /workspace/toolchains/godot-data/godot/export_templates/4.6.3.stable.mono/windows_release_x86_64.exe  
+  Determining projects to restore...
+  Restored /workspace/Fantasy-Warfare/src/Simulation/Simulation.csproj (in 379 ms).
+  Restored /workspace/Fantasy-Warfare/game/FantasyWarfare.csproj (in 615 ms).
+  Determining projects to restore...
+  Restored /workspace/Fantasy-Warfare/tests/Simulation.Tests/Simulation.Tests.csproj (in 153 ms).
+  1 of 2 projects are up-to-date for restore.
+  Simulation -> /workspace/Fantasy-Warfare/src/Simulation/bin/Debug/net8.0/Simulation.dll
+  FantasyWarfare -> /workspace/Fantasy-Warfare/game/.godot/mono/temp/bin/Debug/FantasyWarfare.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.77
+PASS fixed clock and remainder
+PASS movement arrives without overshoot
+PASS live order replaces destination
+PASS pause holds state and delivers only on resume
+PASS paused replacement and waypoint queue
+PASS seed and scheduled inputs independent of frame partition
+PASS invalid commands rejected
+PASS terrain includes ridge and valley
+PASS Gate 1 twelve identified formations and four unit classes
+PASS selection toggle rectangle and enemy boundary
+PASS group moves preserve offsets and use common pace
+PASS paused group replacement and waypoint receipt
+PASS invalid group destination is atomic
+PASS forest roads open terrain and cavalry speed consequences
+PASS uphill slope slows actual movement
+PASS footprint path routes around rock without intersection
+PASS narrow gap accepts point scout but rejects formation footprint
+PASS ridge and dense forest obstruct functional LOS
+PASS concealed enemy cannot be targeted
+PASS melee inflicts simultaneous casualties and morale loss
+PASS ranged fire costs ammunition and inflicts casualties
+PASS range and LOS prevent illegitimate ranged damage
+PASS ammunition exhaustion prevents later volleys
+PASS firing exposes a forest-edge archer under documented spotting
+PASS spear front discourages cavalry and rear exposure increases damage
+PASS fatigue builds while moving and recovers while holding
+PASS woods reduce cohesion while formation moves
+PASS controlled withdrawal is distinct from a rout
+PASS rout panic affects nearby friendlies and safe rally restores survivors
+PASS rally near a known enemy is rejected at delivery
+PASS commander API accepts observations not authoritative battle state
+PASS hidden enemy differences cannot change commander decision
+PASS commander avoids frontal cavalry attack on known spearmen
+PASS commander withdraws threatened archers and assigns a screen
+SCENARIO surprise: Exploit@1 -> AvoidSpears@81; observed reserve=2
+PASS unexpected enemy discovery changes actual commander plan
+PASS stale intelligence retains last seen position rather than tracking hidden unit
+SCENARIO battle: casualties=28, AI decisions=10, RNG=730922798
+PASS combat outcome and AI are frame-independent for fixed seed and inputs
+PASS forest contact reveals opponents and permits melee, not distant arrows
+PASS flanking causes morale and cohesion pressure without casualties
+SCENARIO default: tick=3200, casualties=92, plans=242, outcome=ongoing
+PASS default playable skirmish actually reaches combat with opposing commander
+PASS versioned scenario data drives the runtime roster and weapons
+PASS malformed or unsupported scenario data is rejected
+PASS archer commander respects its own exhausted ammunition
+PASS victory follows actual defeat or army-wide routing
+MEASURE Infantry open: 61 ticks, 3.05 s, 12.000 m, 3.934 m/s, climb 0.000 m, fatigue 61/1000
+MEASURE Infantry forest: 96 ticks, 4.80 s, 12.000 m, 2.500 m/s, climb 0.000 m, fatigue 192/1000
+MEASURE Cavalry open: 38 ticks, 1.90 s, 12.000 m, 6.316 m/s, climb 0.000 m, fatigue 38/1000
+MEASURE Cavalry forest: 111 ticks, 5.55 s, 12.000 m, 2.162 m/s, climb 0.000 m, fatigue 222/1000
+MEASURE Infantry level: 41 ticks, 2.05 s, 8.000 m, 3.902 m/s, climb 0.000 m, fatigue 41/1000
+MEASURE Infantry uphill: 127 ticks, 6.35 s, 11.241 m, 1.770 m/s, climb 5.133 m, fatigue 483/1000
+MEASURE Infantry road: 51 ticks, 2.55 s, 12.000 m, 4.706 m/s, climb 0.000 m, fatigue 51/1000
+PASS playable infantry forest travel penalty
+PASS playable cavalry forest travel penalty
+PASS playable uphill speed and fatigue
+PASS playable road faster than open
+PASS playable movement trial repeatability
+PASS playable terrain movement frame independence
+PASS arrival measurements survive long rendering frames
+PASS all classes respect forest and uphill terrain
+PASS terrain routing avoids clear but expensive forest
+PASS terrain routing uses nearby road
+PASS slope cost is directional and steep slopes block
+55 passed, 0 failed
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+[   0% ] first_scan_filesystem | Started Project initialization (5 steps)
+[   0% ] first_scan_filesystem | Scanning file structure...
+[  16% ] first_scan_filesystem | Loading global class names...
+[  33% ] first_scan_filesystem | Verifying GDExtensions...
+[  50% ] first_scan_filesystem | Creating autoload scripts...
+[  66% ] first_scan_filesystem | Initializing plugins...
+[  83% ] first_scan_filesystem | Starting file scan...
+[ DONE ] first_scan_filesystem
+
+[   0% ] loading_editor_layout | Started Loading editor (5 steps)
+[   0% ] loading_editor_layout | Loading editor layout...
+[  16% ] loading_editor_layout | Loading docks...
+[ DONE ] loading_editor_layout
+
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+PASS Godot integration: selection, terrain raycast move, live reissue, pause queue/resume, three cameras, orbit and zoom
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 6 friendly formations; shared simulation, terrain and faction visibility.
+PASS Gate 1 Godot integration: 12 formations, click/shift/box-selection, group move/reissue, pause queue/resume, hold/withdraw/rally, hidden enemy render/pick boundary, cameras/orbit/zoom
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 6 friendly formations; shared simulation, terrain and faction visibility.
+PASS Corrections Godot integration: compact HUD, selected details/collapse/help, selection/order/cameras/pause/buttons, 2500 rendered terrain classes, collision heights
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Infantry open: 61 ticks, 3.05 s, 12.000 m, 3.934 m/s, climb 0.000 m, fatigue 61/1000
+PASS Playable terrain trial: Infantry open
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Infantry forest: 96 ticks, 4.80 s, 12.000 m, 2.500 m/s, climb 0.000 m, fatigue 192/1000
+PASS Playable terrain trial: Infantry forest
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Cavalry open: 38 ticks, 1.90 s, 12.000 m, 6.316 m/s, climb 0.000 m, fatigue 38/1000
+PASS Playable terrain trial: Cavalry open
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Cavalry forest: 111 ticks, 5.55 s, 12.000 m, 2.162 m/s, climb 0.000 m, fatigue 222/1000
+PASS Playable terrain trial: Cavalry forest
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Infantry level: 41 ticks, 2.05 s, 8.000 m, 3.902 m/s, climb 0.000 m, fatigue 41/1000
+PASS Playable terrain trial: Infantry level
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Infantry uphill: 127 ticks, 6.35 s, 11.241 m, 1.770 m/s, climb 5.133 m, fatigue 483/1000
+PASS Playable terrain trial: Infantry uphill
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 1 friendly formations; shared simulation, terrain and faction visibility.
+MEASURE playable Infantry road: 51 ticks, 2.55 s, 12.000 m, 4.706 m/s, climb 0.000 m, fatigue 51/1000
+PASS Playable terrain trial: Infantry road
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+[   0% ] first_scan_filesystem | Started Project initialization (5 steps)
+[   0% ] first_scan_filesystem | Scanning file structure...
+[  16% ] first_scan_filesystem | Loading global class names...
+[  33% ] first_scan_filesystem | Verifying GDExtensions...
+[  50% ] first_scan_filesystem | Creating autoload scripts...
+[  66% ] first_scan_filesystem | Initializing plugins...
+[  83% ] first_scan_filesystem | Starting file scan...
+[ DONE ] first_scan_filesystem
+
+[   0% ] dotnet_publish_project | Started Publishing .NET project... (1 steps)
+[   0% ] dotnet_publish_project | Running dotnet publish
+[ DONE ] dotnet_publish_project
+
+[   0% ] savepack | Started Packing (102 steps)
+[   1% ] savepack | Storing File: res://.godot/exported/133200997/export-aea5d8cbfe0bb3bdae0fd20306e7c3c1-Battle.scn
+[  21% ] savepack | Storing File: res://Scripts/BattleView.cs
+[  40% ] savepack | Storing File: res://Scripts/CompactHud.cs
+[  60% ] savepack | Storing File: res://Scripts/SelectionOverlay.cs
+[  79% ] savepack | Storing File: res://packages.lock.json
+[  79% ] savepack | Storing File: res://Scenes/Battle.tscn.remap
+[  79% ] savepack | Storing File: res://.godot/global_script_class_cache.cfg
+[  79% ] savepack | Storing File: res://.godot/uid_cache.bin
+[  79% ] savepack | Storing File: res://project.binary
+[ DONE ] savepack
+
+  Determining projects to restore...
+  Restored /workspace/Fantasy-Warfare/tests/Simulation.Tests/Simulation.Tests.csproj (in 279 ms).
+  1 of 2 projects are up-to-date for restore.
+  Simulation -> /workspace/Fantasy-Warfare/src/Simulation/bin/ExportRelease/net8.0/Simulation.dll
+  Simulation.Tests -> /workspace/Fantasy-Warfare/tests/Simulation.Tests/bin/ExportRelease/net8.0/win-x64/Simulation.Tests.dll
+  Simulation.Tests -> /workspace/Fantasy-Warfare/builds/windows-tests/
+Validated self-contained Windows x64 package: /workspace/Fantasy-Warfare/builds/Fantasy-Warfare-Gate1-Windows-x64.zip (70,825,407 bytes)
+SHA256 821863d6527670d492b175b2598eb1c35fc17b391b9987b195c1da07b87e7e84

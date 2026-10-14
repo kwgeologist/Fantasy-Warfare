@@ -45,7 +45,19 @@ Failures found during development were corrected, not suppressed:
 - Wine rendering lacked the triangle glyphs used on collapse buttons; changed them to plain +/- indicators for reliable legibility.
 - The first preservation-check script mishandled separator whitespace between unchanged methods; corrected the comparison. It was not a gameplay/test assertion failure.
 
-Windows extraction, exported execution, rendered input results and final ZIP hash are recorded below after packaging.
+Final source/export verification passed with zero warnings/errors. Fresh extracted Windows ZIP execution of `Verify-Gate1.cmd /nopause` under Wine exited **0**: **55 passed, 0 failed**, both original exported-engine suites PASS, corrections integration PASS, seven playable terrain trials PASS with exactly the tabled measurements. The isolated Wine prefix has no installed Windows .NET runtime; multilevel lookup was disabled, so bundled apphosts/runtime and the game’s exact Simulation.dll were exercised.
+
+Source logs: [source and export verification](corrections-evidence/source-verification.log), [Windows verification](corrections-evidence/windows-verification.log), [Gate 0 engine](corrections-evidence/gate0-smoke.log), [Gate 1 engine](corrections-evidence/gate1-smoke.log), [HUD/terrain engine](corrections-evidence/corrections-smoke.log). Default skirmish regression still generated 92 casualties and 242 commander decisions by tick 3200; surprise replanning remains Exploit@1 → AvoidSpears@81.
+
+Actual rendered Windows executable under Wine/Mesa, with XTest OS mouse/keyboard input: single archer selection, six-unit group order on playable terrain, tactical pause/resume, RTS/free/overhead cameras, selected details, help and collapse were observed. Paused screenshots have **zero changed pixels**, six selected units and six queued orders; resume shows moved positions and queued count 0. The final rendered Windows uphill trial also reported exactly 127 ticks / 6.35s / 11.241m / fatigue 483. Button signal dispatch/pause/hold/focus checks are separately asserted in the exported HUD suite. Screenshots are actual executable output, not UI mockups.
+
+ZIP: `packages/Fantasy-Warfare-Gate1-Windows-x64.zip`, **70,825,407 bytes**. SHA-256: `821863d6527670d492b175b2598eb1c35fc17b391b9987b195c1da07b87e7e84`. ZIP CRC, all **201 bundled file hashes**, all **26 gameplay/source hashes** and self-contained Windows x64 PE/.NET configuration verified after fresh extraction. Source commit in its manifest: `8f9d4e9eac61f36cc3c9fd46591cba75e3aefd64`; later delivery commits contain the archive/evidence/documentation only.
+
+![Final Windows compact default HUD](corrections-evidence/windows-default.png)
+![Final Windows paused group with six queued orders](corrections-evidence/windows-paused.png)
+![Final Windows group movement after resume](corrections-evidence/windows-resumed-move.png)
+![Final Windows selected archer details](corrections-evidence/windows-selected.png)
+![Final Windows collapsed details and optional help](corrections-evidence/windows-collapsed.png)
 
 ## Limits and next acceptance steps
 
@@ -54,3 +66,5 @@ Windows binaries tested through Wine are compatibility-layer evidence, **not nat
 Static 2m routing approximates minimum travel cost and can still congest against moving formations. Group pace caps do not guarantee rigid formation spacing across different terrain. Surface penalties use formation center classification; circular clearance applies to obstacles. Very small resized windows may require expanding the window to access the entire command row; default 1280×720 was tested. Terrain is authored, not imported. No historical calibration or large-army performance claim.
 
 Next: extract this updated ZIP, run verification, then test battlefield visibility, selected details/help, commands and all cameras; compare the included visible terrain trials and ordinary skirmish movement. Gate 1 stays open until the user accepts both fixes natively. Do not begin Gate 2.
+
+![Final Windows visible uphill trial result](corrections-evidence/windows-uphill-finished.png)

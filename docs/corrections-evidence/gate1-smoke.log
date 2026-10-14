@@ -1,0 +1,4 @@
+Godot Engine v4.6.3.stable.mono.official.7d41c59c4 - https://godotengine.org
+
+Gate 1 scene ready: 6 friendly formations; shared simulation, terrain and faction visibility.
+PASS Gate 1 Godot integration: 12 formations, click/shift/box-selection, group move/reissue, pause queue/resume, hold/withdraw/rally, hidden enemy render/pick boundary, cameras/orbit/zoom

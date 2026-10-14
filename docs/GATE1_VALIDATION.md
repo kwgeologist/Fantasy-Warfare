@@ -1,4 +1,6 @@
-# Gate 1 validation record
+# Initial Gate 1 delivery validation record
+
+This is the historical initial delivery record. For the current HUD/terrain correction package, 55-test results and measured travel times, see [Gate 1 corrections](GATE1_CORRECTIONS.md).
 
 Gate 0 native Windows user acceptance passed, as reported by the user. Gate 1 tests below were executed in Linux / Wine; they do not substitute for native Windows/GPU testing.
 
