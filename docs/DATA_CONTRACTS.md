@@ -1,0 +1,5 @@
+# Gate 0 data contracts — version 1
+
+`Battle.SchemaVersion = 1`; each `MoveOrder` carries schema version 1, an increasing `long` ID scoped to this battle, a delivery tick, an integer X/Z target in millimetres and an append flag. The single formation's ID is 1 and strength is 24; both are read from simulation state by presentation. Tick count begins at zero; commands must have a future delivery tick. Targets are bounded to +/-48,000 mm, leaving a margin inside the 100 m terrain.
+
+Battle seed is an unsigned 32-bit value (prototype default 42 in the Godot adapter). There are no random draws at this gate, no scenario serialization, save format or replay persistence. Do not treat the public in-memory objects as a promised future save schema. Same seed and scheduled inputs on the pinned runtime produce equal tick/position/destination state for equal unpaused elapsed time regardless of frame partition. Interactive order timing is quantized to the next tick; identical wall-time clicks across different frames are not promised to schedule on identical ticks. No campaign/army state copies or hidden perception interfaces are introduced.

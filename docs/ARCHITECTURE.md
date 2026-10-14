@@ -1,0 +1,9 @@
+# Gate 0 architecture
+
+`src/Simulation` is a dependency-free .NET 8 library. `Battle` owns the only formation state, tick, pause flag, ordered pending commands, active destination and waypoint queue. Godot never owns a competing army roster. `tests/Simulation.Tests` is a console executable with failing assertions and a nonzero failure exit code; it requires neither Godot nor a test-framework package.
+
+`game/Scenes/Battle.tscn` loads `BattleView`, the Godot input/render adapter. It creates placeholder terrain, woods and troop meshes at startup, reads simulation positions, raycasts click input, and advances the simulation using elapsed time. Three camera policies reuse one camera and the same scene. Panning/orbit/zoom are presentation-only; they work during tactical pause.
+
+The simulation advances in 50 ms ticks. A frame-time accumulator in the adapter preserves fractional TimeSpan conversion; the simulation preserves incomplete fixed ticks. No tick is skipped to improve frame rate. Paused elapsed time never enters the simulation. A command is issued immediately, received on its delivery tick, and moves the formation on that tick. Commands sort by delivery tick, then monotonically increasing ID. Normal commands clear active/queued destinations; append commands preserve them. Pause retains existing routes and pending commands.
+
+Positions use integer millimetres on X/Z. Each tick takes a bounded 200 mm horizontal step, rounding diagonal components; the final step snaps exactly to its target. The library's shared analytic height field determines the mesh and render elevation. No terrain speed or LOS rules exist yet. Conservative Gate 0 decisions: straight traversable routes, next-tick command receipt, one fixed roster, no random mechanics and no future-system scaffolding. Future terrain/navigation changes must live in the simulation and have mechanic tests before presentation claims them.

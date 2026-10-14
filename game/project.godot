@@ -1,0 +1,13 @@
+config_version=5
+[application]
+config/name="Fantasy Warfare — Gate 0"
+run/main_scene="res://Scenes/Battle.tscn"
+config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+[dotnet]
+project/assembly_name="FantasyWarfare"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.12, 0.17, 0.23, 1)

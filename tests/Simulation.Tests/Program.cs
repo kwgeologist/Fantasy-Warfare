@@ -1,0 +1,14 @@
+using FantasyWarfare.Simulation;
+int passed = 0, failed = 0;
+void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
+void Test(string name, Action action) { try { action(); passed++; Console.WriteLine($"PASS {name}"); } catch(Exception e) { failed++; Console.WriteLine($"FAIL {name}: {e.Message}"); } }
+TimeSpan T(int ticks) => TimeSpan.FromTicks(ticks * Battle.TickDuration);
+Test("fixed clock and remainder", () => { var b=new Battle(); b.Advance(TimeSpan.FromTicks(Battle.TickDuration-1)); Check(b.Tick==0,"early tick"); b.Advance(TimeSpan.FromTicks(1)); Check(b.Tick==1,"lost remainder"); });
+Test("movement arrives without overshoot", () => { var b=new Battle(); b.IssueMove(new(-19350,0)); b.Advance(T(10)); Check(b.Formation.Position==new Position(-19350,0) && b.Formation.Destination==null,"arrival"); b.Advance(T(20)); Check(b.Formation.Position==new Position(-19350,0),"drift"); });
+Test("live order replaces destination", () => { var b=new Battle(); b.IssueMove(new(20000,0)); b.Advance(T(5)); var before=b.Formation.Position; b.IssueMove(new(-30000,0)); b.Advance(T(1)); Check(b.Formation.Position.X<before.X,"did not pivot"); });
+Test("pause holds state and delivers only on resume", () => { var b=new Battle(); b.Advance(T(3)); var p=b.Formation.Position; b.SetPaused(true); b.IssueMove(new(0,0)); b.Advance(T(100)); Check(b.Tick==3 && b.Formation.Position==p && b.Pending.Count==1,"pause changed state"); b.SetPaused(false); b.Advance(T(1)); Check(b.Tick==4 && b.Formation.Position.X>p.X && b.Pending.Count==0,"resume"); });
+Test("paused replacement and waypoint queue", () => { var b=new Battle(); b.SetPaused(true); b.IssueMove(new(0,0)); b.IssueMove(new(-19600,0)); b.IssueMove(new(-19600,400),true); b.SetPaused(false); b.Advance(T(8)); Check(b.Formation.Position==new Position(-19600,400),"order queue"); });
+Test("seed and scheduled inputs independent of frame partition", () => { Battle Run(int[] frames) { var b=new Battle(42); b.IssueMove(new(10000,10000),deliveryTick:1); b.IssueMove(new(-15000,12000),deliveryTick:50); foreach(var ms in frames) b.Advance(TimeSpan.FromMilliseconds(ms)); return b; } var a=Run(Enumerable.Repeat(10,1000).ToArray()); var c=Run(Enumerable.Repeat(125,80).ToArray()); Check(a.Seed==c.Seed && a.Tick==c.Tick && a.Formation.Position==c.Formation.Position && a.Formation.Destination==c.Formation.Destination,"frame dependence"); });
+Test("invalid commands rejected", () => { var b=new Battle(); bool rejected=false; try { b.IssueMove(new(49000,0)); } catch(ArgumentOutOfRangeException) { rejected=true; } Check(rejected,"bounds"); });
+Test("terrain includes ridge and valley", () => { Check(Terrain.Height(12,0)>6,"ridge"); Check(Terrain.Height(-10,22)<-3,"valley"); });
+Console.WriteLine($"{passed} passed, {failed} failed"); return failed==0 ? 0 : 1;
